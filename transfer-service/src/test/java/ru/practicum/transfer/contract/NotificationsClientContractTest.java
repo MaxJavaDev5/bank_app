@@ -1,4 +1,4 @@
-package ru.practicum.cash.contract;
+package ru.practicum.transfer.contract;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -7,7 +7,7 @@ import org.springframework.cloud.contract.stubrunner.spring.AutoConfigureStubRun
 import org.springframework.cloud.contract.stubrunner.spring.StubRunnerProperties;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.TestPropertySource;
-import ru.practicum.cash.client.NotificationsClient;
+import ru.practicum.transfer.client.NotificationsClient;
 
 import java.math.BigDecimal;
 
@@ -21,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 })
 @AutoConfigureStubRunner(
         stubsMode = StubRunnerProperties.StubsMode.LOCAL,
-        ids = "ru.practicum:notifications-service:0.0.1-SNAPSHOT:stubs:18082"
+        ids = "ru.practicum:notifications-service:0.0.1-SNAPSHOT:stubs:18084"
 )
 class NotificationsClientContractTest {
 
@@ -29,8 +29,9 @@ class NotificationsClientContractTest {
     private NotificationsClient notificationsClient;
 
     @Test
-    void shouldSendDepositNotificationAccordingToContract() {
+    void shouldSendTransferOutNotificationAccordingToContract() {
         assertDoesNotThrow(() ->
-                notificationsClient.notifyDeposit("user", new BigDecimal("100.00")));
+                notificationsClient.notifySender(
+                        "user", "user2", new BigDecimal("100.00")));
     }
 }

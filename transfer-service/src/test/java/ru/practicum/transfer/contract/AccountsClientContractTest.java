@@ -1,4 +1,4 @@
-package ru.practicum.cash.contract;
+package ru.practicum.transfer.contract;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -7,8 +7,8 @@ import org.springframework.cloud.contract.stubrunner.spring.AutoConfigureStubRun
 import org.springframework.cloud.contract.stubrunner.spring.StubRunnerProperties;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.TestPropertySource;
-import ru.practicum.cash.client.AccountsClient;
-import ru.practicum.cash.dto.AccountDto;
+import ru.practicum.transfer.client.AccountsClient;
+import ru.practicum.transfer.dto.AccountDto;
 
 import java.math.BigDecimal;
 
@@ -23,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 })
 @AutoConfigureStubRunner(
         stubsMode = StubRunnerProperties.StubsMode.LOCAL,
-        ids = "ru.practicum:accounts-service:0.0.1-SNAPSHOT:stubs:18081"
+        ids = "ru.practicum:accounts-service:0.0.1-SNAPSHOT:stubs:18083"
 )
 class AccountsClientContractTest {
 
