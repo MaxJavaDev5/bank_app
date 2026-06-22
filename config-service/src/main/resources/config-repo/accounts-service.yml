@@ -1,0 +1,33 @@
+server:
+  port: ${SERVER_PORT:8081}
+# настройки accounts-сервиса, схема accounts в postgres
+spring:
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:5432/bank
+    username: ${DB_USER:postgres}
+    password: ${DB_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        default_schema: accounts
+        hbm2ddl:
+          create_namespaces: true
+  security:
+    oauth2:
+      client:
+        registration:
+          accounts-client:
+            client-id: accounts-service
+            client-secret: accounts-secret
+            authorization-grant-type: client_credentials
+            scope: openid
+        provider:
+          accounts-client:
+            token-uri: http://${KEYCLOAK_INTERNAL_HOST:localhost}:${KEYCLOAK_INTERNAL_PORT:8180}/realms/bank-realm/protocol/openid-connect/token
+notifications:
+  service:
+    url: lb://notifications-service

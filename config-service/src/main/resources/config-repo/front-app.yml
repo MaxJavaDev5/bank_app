@@ -1,0 +1,4 @@
+server:
+  port: ${SERVER_PORT:8085}
+gateway:
+  url: http://gateway-service:8080
