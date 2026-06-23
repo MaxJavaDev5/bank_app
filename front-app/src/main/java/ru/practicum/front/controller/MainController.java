@@ -73,13 +73,12 @@ public class MainController {
             RedirectAttributes redirectAttributes,
             @AuthenticationPrincipal OidcUser oidcUser) {
         try {
-            AccountDto account = bankClient.getMyAccount();
             BigDecimal amount = BigDecimal.valueOf(value);
             if (action == CashAction.PUT) {
-                bankClient.deposit(account.getLogin(), amount);
+                bankClient.deposit(amount);
                 redirectAttributes.addFlashAttribute("info", "Положено %d руб.".formatted(value));
             } else {
-                bankClient.withdraw(account.getLogin(), amount);
+                bankClient.withdraw(amount);
                 redirectAttributes.addFlashAttribute("info", "Снято %d руб".formatted(value));
             }
         } catch (Exception ex) {
@@ -96,8 +95,7 @@ public class MainController {
             RedirectAttributes redirectAttributes,
             @AuthenticationPrincipal OidcUser oidcUser) {
         try {
-            AccountDto account = bankClient.getMyAccount();
-            bankClient.transfer(account.getLogin(), login, BigDecimal.valueOf(value));
+            bankClient.transfer(login, BigDecimal.valueOf(value));
             String recipientName = findAccountName(login);
             redirectAttributes.addFlashAttribute("info",
                     "Успешно переведено %d руб клиенту %s".formatted(value, recipientName));

@@ -16,9 +16,6 @@ spring:
 accounts:
   service:
     url: lb://accounts-service
-notifications:
-  service:
-    url: lb://notifications-service
 resilience4j:
   circuitbreaker:
     instances:

@@ -60,10 +60,10 @@ public class BankClient {
                 .block();
     }
 
-    public AccountDto deposit(String login, BigDecimal amount) {
+    public AccountDto deposit(BigDecimal amount) {
         return gatewayWebClient.post()
                 .uri("/api/cash/deposit")
-                .bodyValue(Map.of("login", login, "amount", amount))
+                .bodyValue(Map.of("amount", amount))
                 .retrieve()
                 .onStatus(HttpStatusCode::isError, response ->
                         response.bodyToMono(String.class)
@@ -73,10 +73,10 @@ public class BankClient {
                 .block();
     }
 
-    public AccountDto withdraw(String login, BigDecimal amount) {
+    public AccountDto withdraw(BigDecimal amount) {
         return gatewayWebClient.post()
                 .uri("/api/cash/withdraw")
-                .bodyValue(Map.of("login", login, "amount", amount))
+                .bodyValue(Map.of("amount", amount))
                 .retrieve()
                 .onStatus(HttpStatusCode::isError, response ->
                         response.bodyToMono(String.class)
@@ -86,11 +86,10 @@ public class BankClient {
                 .block();
     }
 
-    public void transfer(String fromLogin, String toLogin, BigDecimal amount) {
+    public void transfer(String toLogin, BigDecimal amount) {
         gatewayWebClient.post()
                 .uri("/api/transfer")
                 .bodyValue(Map.of(
-                        "fromLogin", fromLogin,
                         "toLogin", toLogin,
                         "amount", amount
                 ))
