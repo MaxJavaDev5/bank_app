@@ -14,6 +14,7 @@ import ru.practicum.transfer.controller.GlobalExceptionHandler;
 import ru.practicum.transfer.controller.TransferController;
 import ru.practicum.transfer.dto.TransferDto;
 import ru.practicum.transfer.dto.TransferResponseDto;
+import ru.practicum.transfer.model.AccountsServiceUnavailableException;
 import ru.practicum.transfer.service.TransferService;
 
 import java.math.BigDecimal;
@@ -104,6 +105,30 @@ class TransferControllerTest {
                 .andExpect(status().isOk());
 
         verify(transferService).transfer(eq("user"), any(TransferDto.class));
+    }
+
+    @Test
+    void shouldReturn503WhenAccountsServiceUnavailable() throws Exception {
+        TransferDto transferDto = new TransferDto();
+        transferDto.setToLogin("user2");
+        transferDto.setAmount(new BigDecimal("100.00"));
+
+        when(transferService.transfer(eq("user"), any(TransferDto.class)))
+                .thenThrow(new AccountsServiceUnavailableException(new RuntimeException("timeout")));
+
+        mockMvc.perform(post("/transfer")
+                        .with(jwt()
+                                .authorities(
+                                        new SimpleGrantedAuthority("ROLE_USER"),
+                                        new SimpleGrantedAuthority("transfer.write"))
+                                .jwt(builder -> builder
+                                        .subject("user")
+                                        .claim("preferred_username", "user")
+                                        .claim("realm_access", Map.of("roles", List.of("USER", "TRANSFER_WRITE")))))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(transferDto)))
+                .andExpect(status().isServiceUnavailable())
+                .andExpect(jsonPath("$.error").value("Сервис счетов временно недоступен"));
     }
 
     @Test

@@ -14,6 +14,7 @@ import ru.practicum.cash.controller.CashController;
 import ru.practicum.cash.controller.GlobalExceptionHandler;
 import ru.practicum.cash.dto.AccountDto;
 import ru.practicum.cash.dto.CashOperationDto;
+import ru.practicum.cash.model.AccountsServiceUnavailableException;
 import ru.practicum.cash.service.CashService;
 
 import java.math.BigDecimal;
@@ -123,6 +124,27 @@ class CashControllerTest {
                 .andExpect(status().isOk());
 
         verify(cashService).deposit(eq("user"), any(CashOperationDto.class));
+    }
+
+    @Test
+    void shouldReturn503WhenAccountsServiceUnavailable() throws Exception {
+        CashOperationDto operationDto = new CashOperationDto();
+        operationDto.setAmount(new BigDecimal("100.00"));
+
+        when(cashService.deposit(eq("user"), any(CashOperationDto.class)))
+                .thenThrow(new AccountsServiceUnavailableException(new RuntimeException("timeout")));
+
+        mockMvc.perform(post("/cash/deposit")
+                        .with(jwt()
+                                .authorities(new SimpleGrantedAuthority("ROLE_USER"))
+                                .jwt(builder -> builder
+                                        .subject("user")
+                                        .claim("preferred_username", "user")
+                                        .claim("realm_access", Map.of("roles", List.of("USER")))))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(operationDto)))
+                .andExpect(status().isServiceUnavailable())
+                .andExpect(jsonPath("$.error").value("Сервис счетов временно недоступен"));
     }
 
     @Test

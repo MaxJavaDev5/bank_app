@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import ru.practicum.cash.dto.ErrorResponse;
+import ru.practicum.cash.model.AccountsServiceUnavailableException;
 import ru.practicum.cash.model.CashOperationException;
 import ru.practicum.cash.model.RemoteException;
 
@@ -25,6 +26,13 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ErrorResponse handleRemoteError(RemoteException ex) {
         log.warn("Ошибка удалённого сервиса: {}", ex.getMessage());
+        return new ErrorResponse(ex.getMessage());
+    }
+
+    @ExceptionHandler
+    @ResponseStatus(HttpStatus.SERVICE_UNAVAILABLE)
+    public ErrorResponse handleAccountsUnavailable(AccountsServiceUnavailableException ex) {
+        log.error("accounts-service недоступен", ex.getCause());
         return new ErrorResponse(ex.getMessage());
     }
 

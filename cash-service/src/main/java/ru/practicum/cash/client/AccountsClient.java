@@ -6,6 +6,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 import ru.practicum.cash.dto.AccountDto;
+import ru.practicum.cash.model.AccountsServiceUnavailableException;
 import ru.practicum.cash.model.OperationType;
 import ru.practicum.cash.model.RemoteException;
 
@@ -61,6 +62,6 @@ public class AccountsClient {
     }
 
     private AccountDto accountsFallback(String login, BigDecimal amount, Throwable cause) {
-        throw new RuntimeException("Accounts service is not available");
+        throw new AccountsServiceUnavailableException(cause);
     }
 }

@@ -6,6 +6,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 import ru.practicum.transfer.dto.TransferResponseDto;
+import ru.practicum.transfer.model.AccountsServiceUnavailableException;
 import ru.practicum.transfer.model.RemoteException;
 
 import java.math.BigDecimal;
@@ -42,6 +43,6 @@ public class AccountsClient {
 
     private TransferResponseDto transferFallback(
             String fromLogin, String toLogin, BigDecimal amount, Throwable cause) {
-        throw new RuntimeException("Accounts service is not available");
+        throw new AccountsServiceUnavailableException(cause);
     }
 }
