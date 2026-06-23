@@ -49,6 +49,9 @@
       "webOrigins": [
         "http://localhost:8085"
       ],
+      "attributes": {
+        "post.logout.redirect.uris": "http://localhost:8085/*"
+      },
       "defaultClientScopes": [
         "web-origins",
         "role_list",

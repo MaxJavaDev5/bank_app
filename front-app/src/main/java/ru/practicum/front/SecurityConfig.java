@@ -11,7 +11,9 @@ import org.springframework.security.web.SecurityFilterChain;
 public class SecurityConfig {
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(
+            HttpSecurity http,
+            KeycloakLogoutSuccessHandler keycloakLogoutSuccessHandler) throws Exception {
         http
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/", "/error", "/actuator/**", "/css/**", "/js/**").permitAll()
@@ -21,9 +23,7 @@ public class SecurityConfig {
                 .defaultSuccessUrl("/account", true)
             )
             .logout(logout -> logout
-                .logoutSuccessUrl("/")
-                .invalidateHttpSession(true)
-                .clearAuthentication(true)
+                .logoutSuccessHandler(keycloakLogoutSuccessHandler)
             );
 
         return http.build();

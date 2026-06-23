@@ -74,7 +74,7 @@ services:
     networks:
       - bank-network
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8080/health/ready || exit 1"]
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8080'"]
       interval: 15s
       timeout: 10s
       retries: 10
@@ -186,6 +186,8 @@ services:
     environment:
       EUREKA_HOST: discovery-service
       CONFIG_HOST: config-service
+      KEYCLOAK_ISSUER_HOST: localhost
+      KEYCLOAK_ISSUER_PORT: 8180
       KEYCLOAK_INTERNAL_HOST: keycloak
       KEYCLOAK_INTERNAL_PORT: 8080
       GATEWAY_HOST: gateway-service

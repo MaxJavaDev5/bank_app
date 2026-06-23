@@ -44,15 +44,6 @@ mvn -version
 mvn clean verify
 ```
 
-Если Maven видит Java 25:
-
-```powershell
-$env:JAVA_HOME = "C:\Program Files\Eclipse Adoptium\jdk-21.0.11.10-hotspot"
-mvn clean verify
-```
-
-IntelliJ: Settings → Build Tools → Maven → Runner → JRE = 21.
-
 ## Схема
 
 ```

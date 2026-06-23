@@ -8,6 +8,7 @@ import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import ru.practicum.front.client.BankClient;
 import ru.practicum.front.dto.AccountDto;
@@ -36,80 +37,90 @@ public class MainController {
         return "redirect:/account";
     }
 
+    @GetMapping({"/cash", "/transfer"})
+    public String redirectPostOnlyEndpoints() {
+        return "redirect:/account";
+    }
+
     @GetMapping("/account")
     public String getAccount(Model model, @AuthenticationPrincipal OidcUser oidcUser) {
-        return loadMainPage(model, null, null);
+        @SuppressWarnings("unchecked")
+        List<String> errors = (List<String>) model.asMap().get("errors");
+        String info = (String) model.asMap().get("info");
+        return loadMainPage(model, errors, info);
     }
 
     @PostMapping("/account")
     public String editAccount(
-            Model model,
             @RequestParam("name") String name,
             @RequestParam("birthdate") LocalDate birthdate,
+            RedirectAttributes redirectAttributes,
             @AuthenticationPrincipal OidcUser oidcUser) {
         try {
             String[] nameParts = splitName(name);
             bankClient.updateMyAccount(nameParts[1], nameParts[0], birthdate);
-            return loadMainPage(model, null, null);
         } catch (Exception ex) {
             log.warn("Ошибка обновления профиля: {}", ex.getMessage());
-            return loadMainPage(model, List.of(resolveErrorMessage(ex)), null);
+            redirectAttributes.addFlashAttribute("errors", List.of(resolveErrorMessage(ex)));
         }
+        return "redirect:/account";
     }
 
     @PostMapping("/cash")
     public String editCash(
-            Model model,
             @RequestParam("value") int value,
             @RequestParam("action") CashAction action,
+            RedirectAttributes redirectAttributes,
             @AuthenticationPrincipal OidcUser oidcUser) {
         try {
             AccountDto account = bankClient.getMyAccount();
             BigDecimal amount = BigDecimal.valueOf(value);
             if (action == CashAction.PUT) {
                 bankClient.deposit(account.getLogin(), amount);
-                return loadMainPage(model, null, "Положено %d руб.".formatted(value));
+                redirectAttributes.addFlashAttribute("info", "Положено %d руб.".formatted(value));
+            } else {
+                bankClient.withdraw(account.getLogin(), amount);
+                redirectAttributes.addFlashAttribute("info", "Снято %d руб".formatted(value));
             }
-            bankClient.withdraw(account.getLogin(), amount);
-            return loadMainPage(model, null, "Снято %d руб".formatted(value));
         } catch (Exception ex) {
             log.warn("Ошибка операции с наличными: {}", ex.getMessage());
-            return loadMainPage(model, List.of(resolveErrorMessage(ex)), null);
+            redirectAttributes.addFlashAttribute("errors", List.of(resolveErrorMessage(ex)));
         }
+        return "redirect:/account";
     }
 
     @PostMapping("/transfer")
     public String transfer(
-            Model model,
             @RequestParam("value") int value,
             @RequestParam("login") String login,
+            RedirectAttributes redirectAttributes,
             @AuthenticationPrincipal OidcUser oidcUser) {
         try {
             AccountDto account = bankClient.getMyAccount();
             bankClient.transfer(account.getLogin(), login, BigDecimal.valueOf(value));
             String recipientName = findAccountName(login);
-            return loadMainPage(model, null,
+            redirectAttributes.addFlashAttribute("info",
                     "Успешно переведено %d руб клиенту %s".formatted(value, recipientName));
         } catch (Exception ex) {
             log.warn("Ошибка перевода: {}", ex.getMessage());
-            return loadMainPage(model, List.of(resolveErrorMessage(ex)), null);
+            redirectAttributes.addFlashAttribute("errors", List.of(resolveErrorMessage(ex)));
         }
+        return "redirect:/account";
     }
 
     @ExceptionHandler(WebClientResponseException.class)
     public String handleWebClientResponseException(
             WebClientResponseException exception,
-            Model model,
-            @AuthenticationPrincipal OidcUser oidcUser) {
+            RedirectAttributes redirectAttributes) {
         if (exception.getStatusCode() == HttpStatus.FORBIDDEN) {
             String body = exception.getResponseBodyAsString();
-            return loadMainPage(model,
-                    List.of(!body.isBlank() ? body : "Операция отклонена: недостаточно прав"),
-                    null);
+            redirectAttributes.addFlashAttribute("errors",
+                    List.of(!body.isBlank() ? body : "Операция отклонена: недостаточно прав"));
+        } else {
+            redirectAttributes.addFlashAttribute("errors",
+                    List.of("Ошибка сервиса: HTTP " + exception.getStatusCode().value()));
         }
-        return loadMainPage(model,
-                List.of("Ошибка сервиса: HTTP " + exception.getStatusCode().value()),
-                null);
+        return "redirect:/account";
     }
 
     private String loadMainPage(Model model, List<String> errors, String info) {
