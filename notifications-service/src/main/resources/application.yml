@@ -3,6 +3,23 @@
     name: notifications-service
   config:
     import: optional:configserver:http://${CONFIG_HOST:localhost}:8888
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:5432/bank
+    username: ${DB_USER:postgres}
+    password: ${DB_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+  flyway:
+    enabled: true
+    schemas: notifications
+    default-schema: notifications
+    create-schemas: true
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        default_schema: notifications
   security:
     oauth2:
       resourceserver:

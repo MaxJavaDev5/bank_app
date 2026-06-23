@@ -8,15 +8,18 @@
     username: ${DB_USER:postgres}
     password: ${DB_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
+  flyway:
+    enabled: true
+    schemas: accounts
+    default-schema: accounts
+    create-schemas: true
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
     show-sql: false
     properties:
       hibernate:
         default_schema: accounts
-        hbm2ddl:
-          create_namespaces: true
   security:
     oauth2:
       client:

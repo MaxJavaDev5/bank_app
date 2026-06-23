@@ -6,12 +6,15 @@ spring:
     username: ${DB_USER:postgres}
     password: ${DB_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
+  flyway:
+    enabled: true
+    schemas: notifications
+    default-schema: notifications
+    create-schemas: true
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
     show-sql: false
     properties:
       hibernate:
         default_schema: notifications
-        hbm2ddl:
-          create_namespaces: true

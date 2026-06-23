@@ -1,6 +1,8 @@
 spring:
   config:
     import: ""
+  flyway:
+    enabled: false
   datasource:
     url: jdbc:h2:mem:testdb;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;INIT=CREATE SCHEMA IF NOT EXISTS notifications
     driver-class-name: org.h2.Driver
