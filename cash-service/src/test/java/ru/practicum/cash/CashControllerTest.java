@@ -6,7 +6,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
-import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
@@ -24,6 +23,8 @@ import java.util.Map;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -52,14 +53,13 @@ class CashControllerTest {
     @Test
     void shouldDepositMoneyWithStatus200() throws Exception {
         CashOperationDto operationDto = new CashOperationDto();
-        operationDto.setLogin("user");
         operationDto.setAmount(new BigDecimal("500.00"));
 
         AccountDto accountDto = new AccountDto();
         accountDto.setLogin("user");
         accountDto.setBalance(new BigDecimal("1500.00"));
 
-        when(cashService.deposit(any(CashOperationDto.class))).thenReturn(accountDto);
+        when(cashService.deposit(eq("user"), any(CashOperationDto.class))).thenReturn(accountDto);
 
         mockMvc.perform(post("/cash/deposit")
                         .with(jwt()
@@ -78,14 +78,13 @@ class CashControllerTest {
     @Test
     void shouldWithdrawMoneyWithStatus200() throws Exception {
         CashOperationDto operationDto = new CashOperationDto();
-        operationDto.setLogin("user");
         operationDto.setAmount(new BigDecimal("200.00"));
 
         AccountDto accountDto = new AccountDto();
         accountDto.setLogin("user");
         accountDto.setBalance(new BigDecimal("800.00"));
 
-        when(cashService.withdraw(any(CashOperationDto.class))).thenReturn(accountDto);
+        when(cashService.withdraw(eq("user"), any(CashOperationDto.class))).thenReturn(accountDto);
 
         mockMvc.perform(post("/cash/withdraw")
                         .with(jwt()
@@ -102,9 +101,33 @@ class CashControllerTest {
     }
 
     @Test
+    void shouldUseLoginFromJwtPreferredUsername() throws Exception {
+        CashOperationDto operationDto = new CashOperationDto();
+        operationDto.setAmount(new BigDecimal("100.00"));
+
+        AccountDto accountDto = new AccountDto();
+        accountDto.setLogin("user");
+        accountDto.setBalance(new BigDecimal("1100.00"));
+
+        when(cashService.deposit(eq("user"), any(CashOperationDto.class))).thenReturn(accountDto);
+
+        mockMvc.perform(post("/cash/deposit")
+                        .with(jwt()
+                                .authorities(new SimpleGrantedAuthority("ROLE_USER"))
+                                .jwt(builder -> builder
+                                        .subject("someone-else")
+                                        .claim("preferred_username", "user")
+                                        .claim("realm_access", Map.of("roles", List.of("USER")))))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(operationDto)))
+                .andExpect(status().isOk());
+
+        verify(cashService).deposit(eq("user"), any(CashOperationDto.class));
+    }
+
+    @Test
     void shouldReturn401WhenNoToken() throws Exception {
         CashOperationDto operationDto = new CashOperationDto();
-        operationDto.setLogin("user");
         operationDto.setAmount(new BigDecimal("100.00"));
 
         mockMvc.perform(post("/cash/deposit")
