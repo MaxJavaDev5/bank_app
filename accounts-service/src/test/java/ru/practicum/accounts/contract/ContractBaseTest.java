@@ -6,6 +6,8 @@ import org.mockito.Mockito;
 import ru.practicum.accounts.controller.AccountController;
 import ru.practicum.accounts.controller.GlobalExceptionHandler;
 import ru.practicum.accounts.dto.AccountDto;
+import ru.practicum.accounts.dto.TransferRequestDto;
+import ru.practicum.accounts.dto.TransferResponseDto;
 import ru.practicum.accounts.dto.UpdateBalanceDto;
 import ru.practicum.accounts.service.AccountService;
 
@@ -35,6 +37,14 @@ public abstract class ContractBaseTest {
                     }
                     return account;
                 });
+
+        when(accountService.transfer(eq("user"), eq("user2"), any()))
+                .thenReturn(new TransferResponseDto(
+                        "user",
+                        "user2",
+                        new BigDecimal("300.00"),
+                        new BigDecimal("700.00")
+                ));
 
         RestAssuredMockMvc.standaloneSetup(
                 new AccountController(accountService),

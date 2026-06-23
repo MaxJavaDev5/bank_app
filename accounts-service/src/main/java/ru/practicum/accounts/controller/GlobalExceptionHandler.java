@@ -1,6 +1,7 @@
 package ru.practicum.accounts.controller;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -9,6 +10,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import ru.practicum.accounts.dto.ErrorResponse;
 import ru.practicum.accounts.model.AccountNotFoundException;
 import ru.practicum.accounts.model.InsufficientFundsException;
+import ru.practicum.accounts.model.TransferException;
 
 @Slf4j
 @RestControllerAdvice
@@ -26,6 +28,20 @@ public class GlobalExceptionHandler {
     public ErrorResponse handleInsufficientFunds(InsufficientFundsException ex) {
         log.warn("Недостаточно средств: {}", ex.getMessage());
         return  new ErrorResponse(ex.getMessage());
+    }
+
+    @ExceptionHandler
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ErrorResponse handleOptimisticLock(OptimisticLockingFailureException ex) {
+        log.warn("Конфликт при обновлении счёта: {}", ex.getMessage());
+        return new ErrorResponse("Счёт уже изменён, попробуйте ещё раз");
+    }
+
+    @ExceptionHandler
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrorResponse handleTransferError(TransferException ex) {
+        log.warn("Ошибка перевода: {}", ex.getMessage());
+        return new ErrorResponse(ex.getMessage());
     }
 
     @ExceptionHandler

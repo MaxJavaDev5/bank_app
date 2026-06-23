@@ -8,6 +8,8 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.accounts.dto.AccountDto;
 import ru.practicum.accounts.dto.AccountShortDto;
+import ru.practicum.accounts.dto.TransferRequestDto;
+import ru.practicum.accounts.dto.TransferResponseDto;
 import ru.practicum.accounts.dto.UpdateAccountDto;
 import ru.practicum.accounts.dto.UpdateBalanceDto;
 import ru.practicum.accounts.security.JwtUtils;
@@ -48,5 +50,15 @@ public class AccountController {
             @PathVariable String login,
             @Valid @RequestBody UpdateBalanceDto updateBalanceDto) {
         return accountService.updateBalance(login, updateBalanceDto);
+    }
+
+    @PostMapping("/transfer")
+    @PreAuthorize("hasRole('SERVICE')")
+    public TransferResponseDto transfer(@Valid @RequestBody TransferRequestDto transferDto) {
+        return accountService.transfer(
+                transferDto.getFromLogin(),
+                transferDto.getToLogin(),
+                transferDto.getAmount()
+        );
     }
 }
