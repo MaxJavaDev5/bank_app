@@ -28,6 +28,9 @@ public class Notification {
     @Column(name = "type", nullable = false)
     private NotificationType type;
 
+    @Column(name = "event_id", unique = true)
+    private Long eventId;
+
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 

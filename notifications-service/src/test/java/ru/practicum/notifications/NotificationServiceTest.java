@@ -13,6 +13,7 @@ import ru.practicum.notifications.repository.NotificationRepository;
 import ru.practicum.notifications.service.NotificationService;
 
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -31,8 +32,8 @@ class NotificationServiceTest {
 
     @Test
     void shouldCreateNotification() {
-        
         NotificationRequestDto request = new NotificationRequestDto();
+        request.setEventId(1L);
         request.setLogin("user");
         request.setMessage("Пополнение на 500 рублей");
         request.setType(Notification.NotificationType.DEPOSIT);
@@ -45,20 +46,49 @@ class NotificationServiceTest {
         expectedDto.setId(1L);
         expectedDto.setLogin("user");
 
+        when(notificationRepository.findByEventId(1L)).thenReturn(Optional.empty());
         when(notificationMapper.toNotification(request)).thenReturn(notification);
         when(notificationRepository.save(notification)).thenReturn(notification);
         when(notificationMapper.toNotificationDto(notification)).thenReturn(expectedDto);
 
-        NotificationDto result = notificationService.createNotification(request);
+        NotificationService.NotificationCreationResult result =
+                notificationService.createNotification(request);
 
-        assertNotNull(result);
-        assertEquals(1L, result.getId());
+        assertNotNull(result.notification());
+        assertEquals(1L, result.notification().getId());
+        assertTrue(result.created());
         verify(notificationRepository, times(1)).save(notification);
     }
 
     @Test
+    void shouldReturnExistingNotificationWhenEventIdAlreadyExists() {
+        NotificationRequestDto request = new NotificationRequestDto();
+        request.setEventId(1L);
+        request.setLogin("user");
+        request.setMessage("Пополнение на 500 рублей");
+        request.setType(Notification.NotificationType.DEPOSIT);
+
+        Notification existing = new Notification();
+        existing.setId(1L);
+        existing.setEventId(1L);
+
+        NotificationDto expectedDto = new NotificationDto();
+        expectedDto.setId(1L);
+        expectedDto.setEventId(1L);
+
+        when(notificationRepository.findByEventId(1L)).thenReturn(Optional.of(existing));
+        when(notificationMapper.toNotificationDto(existing)).thenReturn(expectedDto);
+
+        NotificationService.NotificationCreationResult result =
+                notificationService.createNotification(request);
+
+        assertEquals(1L, result.notification().getId());
+        assertFalse(result.created());
+        verify(notificationRepository, never()).save(any());
+    }
+
+    @Test
     void shouldReturnNotificationsForUser() {
-        
         Notification notification = new Notification();
         notification.setLogin("user");
 

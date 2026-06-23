@@ -12,6 +12,7 @@ Contract.make {
             header('Authorization': 'Bearer test-token')
         }
         body([
+            eventId: 2,
             login: 'user',
             message: 'Вы перевели 100.00 рублей пользователю user2',
             type: 'TRANSFER_OUT'
@@ -26,7 +27,8 @@ Contract.make {
             id: $(anyPositiveInt()),
             login: 'user',
             message: 'Вы перевели 100.00 рублей пользователю user2',
-            type: 'TRANSFER_OUT'
+            type: 'TRANSFER_OUT',
+            eventId: 2
         ])
     }
 }

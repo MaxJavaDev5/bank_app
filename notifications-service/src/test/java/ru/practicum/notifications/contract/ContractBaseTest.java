@@ -32,8 +32,9 @@ public abstract class ContractBaseTest {
                     response.setLogin(request.getLogin());
                     response.setMessage(request.getMessage());
                     response.setType(request.getType());
+                    response.setEventId(request.getEventId());
                     response.setCreatedAt(LocalDateTime.parse("2024-06-01T12:00:00"));
-                    return response;
+                    return new NotificationService.NotificationCreationResult(response, true);
                 });
 
         ObjectMapper objectMapper = new ObjectMapper();

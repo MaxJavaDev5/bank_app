@@ -12,6 +12,7 @@ Contract.make {
             header('Authorization': 'Bearer test-token')
         }
         body([
+            eventId: 1,
             login: 'user',
             message: 'Ваш счёт пополнен на 100.00 рублей',
             type: 'DEPOSIT'
@@ -26,7 +27,8 @@ Contract.make {
             id: $(anyPositiveInt()),
             login: 'user',
             message: 'Ваш счёт пополнен на 100.00 рублей',
-            type: 'DEPOSIT'
+            type: 'DEPOSIT',
+            eventId: 1
         ])
     }
 }

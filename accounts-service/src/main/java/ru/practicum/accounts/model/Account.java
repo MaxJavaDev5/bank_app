@@ -31,7 +31,7 @@ public class Account {
     @Column(name = "birth_date")
     private LocalDate birthDate;
 
-    @Column(name = "balance", nullable = false)
+    @Column(name = "balance", nullable = false, precision = 19, scale = 2)
     private BigDecimal balance = BigDecimal.ZERO;
 
     @Version

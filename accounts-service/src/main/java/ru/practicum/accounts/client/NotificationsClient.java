@@ -13,10 +13,11 @@ public class NotificationsClient {
 
     private final WebClient notificationsWebClient;
 
-    public void sendNotification(String login, String message, NotificationType type) {
+    public void sendNotification(Long eventId, String login, String message, NotificationType type) {
         notificationsWebClient.post()
                 .uri("/notifications")
                 .bodyValue(Map.of(
+                        "eventId", eventId,
                         "login", login,
                         "message", message,
                         "type", type

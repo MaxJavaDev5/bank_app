@@ -15,5 +15,6 @@ public class NotificationDto {
     private String login;
     private String message;
     private Notification.NotificationType type;
+    private Long eventId;
     private LocalDateTime createdAt;
 }

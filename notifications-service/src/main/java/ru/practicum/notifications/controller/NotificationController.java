@@ -3,6 +3,7 @@ package ru.practicum.notifications.controller;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -22,10 +23,13 @@ public class NotificationController {
     private final NotificationService notificationService;
 
     @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
     @PreAuthorize("hasRole('SERVICE')")
-    public NotificationDto createNotification(@Valid @RequestBody NotificationRequestDto request) {
-        return notificationService.createNotification(request);
+    public ResponseEntity<NotificationDto> createNotification(
+            @Valid @RequestBody NotificationRequestDto request) {
+        NotificationService.NotificationCreationResult result =
+                notificationService.createNotification(request);
+        HttpStatus status = result.created() ? HttpStatus.CREATED : HttpStatus.OK;
+        return ResponseEntity.status(status).body(result.notification());
     }
 
     @GetMapping("/me")

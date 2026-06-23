@@ -21,17 +21,25 @@ public class NotificationService {
     private final NotificationMapper notificationMapper;
 
     @Transactional
-    public NotificationDto createNotification(NotificationRequestDto request) {
-        Notification notification = notificationMapper.toNotification(request);
-        Notification savedNotification = notificationRepository.save(notification);
-        log.info("уведомление для {}: {}", request.getLogin(), request.getMessage());
-
-        return notificationMapper.toNotificationDto(savedNotification);
+    public NotificationCreationResult createNotification(NotificationRequestDto request) {
+        return notificationRepository.findByEventId(request.getEventId())
+                .map(notification -> new NotificationCreationResult(
+                        notificationMapper.toNotificationDto(notification), false))
+                .orElseGet(() -> {
+                    Notification notification = notificationMapper.toNotification(request);
+                    Notification savedNotification = notificationRepository.save(notification);
+                    log.info("уведомление для {}: {}", request.getLogin(), request.getMessage());
+                    return new NotificationCreationResult(
+                            notificationMapper.toNotificationDto(savedNotification), true);
+                });
     }
 
     @Transactional(readOnly = true)
     public List<NotificationDto> getNotificationsByLogin(String login) {
         List<Notification> notifications = notificationRepository.findByLoginOrderByCreatedAtDesc(login);
         return notificationMapper.toNotificationDtoList(notifications);
+    }
+
+    public record NotificationCreationResult(NotificationDto notification, boolean created) {
     }
 }

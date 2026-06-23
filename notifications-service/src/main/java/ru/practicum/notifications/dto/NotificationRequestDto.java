@@ -20,4 +20,7 @@ public class NotificationRequestDto {
 
     @NotNull(message = "Тип уведомления не может быть null")
     private Notification.NotificationType type;
+
+    @NotNull(message = "Идентификатор события не может быть null")
+    private Long eventId;
 }

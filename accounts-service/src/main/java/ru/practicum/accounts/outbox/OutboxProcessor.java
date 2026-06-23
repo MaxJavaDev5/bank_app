@@ -29,6 +29,7 @@ public class OutboxProcessor {
         for (OutboxEvent event : events) {
             try {
                 notificationsClient.sendNotification(
+                        event.getId(),
                         event.getLogin(),
                         event.getMessage(),
                         event.getEventType()
