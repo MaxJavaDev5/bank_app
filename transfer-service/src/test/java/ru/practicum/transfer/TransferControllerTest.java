@@ -132,6 +132,41 @@ class TransferControllerTest {
     }
 
     @Test
+    void shouldReturn403WhenUserWithoutTransferWrite() throws Exception {
+        TransferDto transferDto = new TransferDto();
+        transferDto.setToLogin("user2");
+        transferDto.setAmount(new BigDecimal("100.00"));
+
+        mockMvc.perform(post("/transfer")
+                        .with(jwt()
+                                .authorities(new SimpleGrantedAuthority("ROLE_USER"))
+                                .jwt(builder -> builder
+                                        .subject("user")
+                                        .claim("preferred_username", "user")
+                                        .claim("realm_access", Map.of("roles", List.of("USER")))))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(transferDto)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void shouldReturn403WhenServiceTokenOnUserEndpoint() throws Exception {
+        TransferDto transferDto = new TransferDto();
+        transferDto.setToLogin("user2");
+        transferDto.setAmount(new BigDecimal("100.00"));
+
+        mockMvc.perform(post("/transfer")
+                        .with(jwt()
+                                .authorities(new SimpleGrantedAuthority("ROLE_SERVICE"))
+                                .jwt(builder -> builder
+                                        .subject("cash-service")
+                                        .claim("realm_access", Map.of("roles", List.of("SERVICE")))))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(transferDto)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
     void shouldReturn401WhenNoToken() throws Exception {
         TransferDto transferDto = new TransferDto();
         transferDto.setToLogin("user2");

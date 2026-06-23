@@ -72,5 +72,7 @@ class TransferServiceTest {
 
         assertThrows(RemoteException.class,
                 () -> transferService.transfer("user", transferDto));
+
+        verify(accountsClient, times(1)).transfer("user", "user2", new BigDecimal("99999.00"));
     }
 }

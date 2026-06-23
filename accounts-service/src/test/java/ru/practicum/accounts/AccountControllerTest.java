@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.MediaType;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import ru.practicum.accounts.config.JwtTestConfig;
@@ -14,6 +15,8 @@ import ru.practicum.accounts.SecurityConfig;
 import ru.practicum.accounts.controller.AccountController;
 import ru.practicum.accounts.controller.GlobalExceptionHandler;
 import ru.practicum.accounts.dto.AccountDto;
+import ru.practicum.accounts.dto.TransferRequestDto;
+import ru.practicum.accounts.dto.UpdateBalanceDto;
 import ru.practicum.accounts.model.AccountNotFoundException;
 import ru.practicum.accounts.service.AccountService;
 
@@ -26,6 +29,8 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(AccountController.class)
@@ -86,6 +91,57 @@ class AccountControllerTest {
                                         .claim("realm_access", Map.of("roles", List.of("USER"))))))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.error").exists());
+    }
+
+    @Test
+    @DisplayName("GET /accounts/me — должен вернуть 403 для service-токена")
+    void shouldReturn403WhenServiceTokenOnGetMe() throws Exception {
+        mockMvc.perform(get("/accounts/me")
+                        .with(jwt()
+                                .authorities(new SimpleGrantedAuthority("ROLE_SERVICE"))
+                                .jwt(builder -> builder
+                                        .subject("accounts-service")
+                                        .claim("realm_access", Map.of("roles", List.of("SERVICE"))))))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("PUT /accounts/{login}/balance — должен вернуть 403 для user-токена")
+    void shouldReturn403WhenUserTokenOnUpdateBalance() throws Exception {
+        UpdateBalanceDto updateBalanceDto = new UpdateBalanceDto();
+        updateBalanceDto.setAmount(new BigDecimal("100.00"));
+        updateBalanceDto.setOperationType(UpdateBalanceDto.OperationType.DEPOSIT);
+
+        mockMvc.perform(put("/accounts/user/balance")
+                        .with(jwt()
+                                .authorities(new SimpleGrantedAuthority("ROLE_USER"))
+                                .jwt(builder -> builder
+                                        .subject("user")
+                                        .claim("preferred_username", "user")
+                                        .claim("realm_access", Map.of("roles", List.of("USER")))))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(updateBalanceDto)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("POST /accounts/transfer — должен вернуть 403 для user-токена")
+    void shouldReturn403WhenUserTokenOnTransfer() throws Exception {
+        TransferRequestDto transferRequestDto = new TransferRequestDto();
+        transferRequestDto.setFromLogin("user");
+        transferRequestDto.setToLogin("user2");
+        transferRequestDto.setAmount(new BigDecimal("100.00"));
+
+        mockMvc.perform(post("/accounts/transfer")
+                        .with(jwt()
+                                .authorities(new SimpleGrantedAuthority("ROLE_USER"))
+                                .jwt(builder -> builder
+                                        .subject("user")
+                                        .claim("preferred_username", "user")
+                                        .claim("realm_access", Map.of("roles", List.of("USER")))))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(transferRequestDto)))
+                .andExpect(status().isForbidden());
     }
 
     @Test

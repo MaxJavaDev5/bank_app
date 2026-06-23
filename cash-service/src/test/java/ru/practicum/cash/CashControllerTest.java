@@ -148,6 +148,38 @@ class CashControllerTest {
     }
 
     @Test
+    void shouldReturn403WhenServiceTokenOnDeposit() throws Exception {
+        CashOperationDto operationDto = new CashOperationDto();
+        operationDto.setAmount(new BigDecimal("100.00"));
+
+        mockMvc.perform(post("/cash/deposit")
+                        .with(jwt()
+                                .authorities(new SimpleGrantedAuthority("ROLE_SERVICE"))
+                                .jwt(builder -> builder
+                                        .subject("cash-service")
+                                        .claim("realm_access", Map.of("roles", List.of("SERVICE")))))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(operationDto)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void shouldReturn403WhenServiceTokenOnWithdraw() throws Exception {
+        CashOperationDto operationDto = new CashOperationDto();
+        operationDto.setAmount(new BigDecimal("100.00"));
+
+        mockMvc.perform(post("/cash/withdraw")
+                        .with(jwt()
+                                .authorities(new SimpleGrantedAuthority("ROLE_SERVICE"))
+                                .jwt(builder -> builder
+                                        .subject("cash-service")
+                                        .claim("realm_access", Map.of("roles", List.of("SERVICE")))))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(operationDto)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
     void shouldReturn401WhenNoToken() throws Exception {
         CashOperationDto operationDto = new CashOperationDto();
         operationDto.setAmount(new BigDecimal("100.00"));

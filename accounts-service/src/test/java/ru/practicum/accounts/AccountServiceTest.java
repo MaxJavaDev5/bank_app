@@ -222,4 +222,25 @@ class AccountServiceTest {
         assertThrows(AccountNotFoundException.class,
                 () -> accountService.transfer("user", "unknown", new BigDecimal("100.00")));
     }
+
+    @Test
+    void shouldNotSaveOutboxWhenTransferFailsOnSave() {
+        Account sender = new Account();
+        sender.setLogin("user");
+        sender.setBalance(new BigDecimal("1000.00"));
+
+        Account receiver = new Account();
+        receiver.setLogin("user2");
+        receiver.setBalance(new BigDecimal("500.00"));
+
+        when(accountRepository.findByLogin("user")).thenReturn(Optional.of(sender));
+        when(accountRepository.findByLogin("user2")).thenReturn(Optional.of(receiver));
+        when(accountRepository.save(sender)).thenReturn(sender);
+        when(accountRepository.save(receiver)).thenThrow(new RuntimeException("save failed"));
+
+        assertThrows(RuntimeException.class,
+                () -> accountService.transfer("user", "user2", new BigDecimal("300.00")));
+
+        verify(outboxRepository, never()).save(any());
+    }
 }
