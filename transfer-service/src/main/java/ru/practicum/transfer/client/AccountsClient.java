@@ -5,8 +5,7 @@ import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
-import ru.practicum.transfer.dto.AccountDto;
-import ru.practicum.transfer.model.OperationType;
+import ru.practicum.transfer.dto.TransferResponseDto;
 import ru.practicum.transfer.model.RemoteException;
 
 import java.math.BigDecimal;
@@ -21,13 +20,14 @@ public class AccountsClient {
         this.accountsWebClient = accountsWebClient;
     }
 
-    @CircuitBreaker(name = "accountsService", fallbackMethod = "accountsFallback")
-    public AccountDto withdraw(String login, BigDecimal amount) {
-        return accountsWebClient.put()
-                .uri("/accounts/{login}/balance", login)
+    @CircuitBreaker(name = "accountsService", fallbackMethod = "transferFallback")
+    public TransferResponseDto transfer(String fromLogin, String toLogin, BigDecimal amount) {
+        return accountsWebClient.post()
+                .uri("/accounts/transfer")
                 .bodyValue(Map.of(
-                        "amount", amount,
-                        "operationType", OperationType.WITHDRAW
+                        "fromLogin", fromLogin,
+                        "toLogin", toLogin,
+                        "amount", amount
                 ))
                 .retrieve()
                 .onStatus(HttpStatusCode::isError, response ->
@@ -36,30 +36,12 @@ public class AccountsClient {
                                         new RemoteException("accounts-service", body)
                                 ))
                 )
-                .bodyToMono(AccountDto.class)
+                .bodyToMono(TransferResponseDto.class)
                 .block();
     }
 
-    @CircuitBreaker(name = "accountsService", fallbackMethod = "accountsFallback")
-    public AccountDto deposit(String login, BigDecimal amount) {
-        return accountsWebClient.put()
-                .uri("/accounts/{login}/balance", login)
-                .bodyValue(Map.of(
-                        "amount", amount,
-                        "operationType", OperationType.DEPOSIT
-                ))
-                .retrieve()
-                .onStatus(HttpStatusCode::isError, response ->
-                        response.bodyToMono(String.class)
-                                .flatMap(body -> Mono.error(
-                                        new RemoteException("accounts-service", body)
-                                ))
-                )
-                .bodyToMono(AccountDto.class)
-                .block();
-    }
-
-    private AccountDto accountsFallback(String login, BigDecimal amount, Throwable cause) {
+    private TransferResponseDto transferFallback(
+            String fromLogin, String toLogin, BigDecimal amount, Throwable cause) {
         throw new RuntimeException("Accounts service is not available");
     }
 }

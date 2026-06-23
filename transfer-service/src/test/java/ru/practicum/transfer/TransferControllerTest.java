@@ -23,6 +23,8 @@ import java.util.Map;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -51,14 +53,13 @@ class TransferControllerTest {
     @Test
     void shouldTransferMoneyWithStatus200() throws Exception {
         TransferDto transferDto = new TransferDto();
-        transferDto.setFromLogin("user");
         transferDto.setToLogin("user2");
         transferDto.setAmount(new BigDecimal("300.00"));
 
         TransferResponseDto resultDto = new TransferResponseDto(
                 "user", "user2", new BigDecimal("300.00"), new BigDecimal("700.00"));
 
-        when(transferService.transfer(any(TransferDto.class))).thenReturn(resultDto);
+        when(transferService.transfer(eq("user"), any(TransferDto.class))).thenReturn(resultDto);
 
         mockMvc.perform(post("/transfer")
                         .with(jwt()
@@ -79,9 +80,35 @@ class TransferControllerTest {
     }
 
     @Test
+    void shouldUseLoginFromJwtPreferredUsername() throws Exception {
+        TransferDto transferDto = new TransferDto();
+        transferDto.setToLogin("user2");
+        transferDto.setAmount(new BigDecimal("100.00"));
+
+        TransferResponseDto resultDto = new TransferResponseDto(
+                "user", "user2", new BigDecimal("100.00"), new BigDecimal("900.00"));
+
+        when(transferService.transfer(eq("user"), any(TransferDto.class))).thenReturn(resultDto);
+
+        mockMvc.perform(post("/transfer")
+                        .with(jwt()
+                                .authorities(
+                                        new SimpleGrantedAuthority("ROLE_USER"),
+                                        new SimpleGrantedAuthority("transfer.write"))
+                                .jwt(builder -> builder
+                                        .subject("someone-else")
+                                        .claim("preferred_username", "user")
+                                        .claim("realm_access", Map.of("roles", List.of("USER", "TRANSFER_WRITE")))))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(transferDto)))
+                .andExpect(status().isOk());
+
+        verify(transferService).transfer(eq("user"), any(TransferDto.class));
+    }
+
+    @Test
     void shouldReturn401WhenNoToken() throws Exception {
         TransferDto transferDto = new TransferDto();
-        transferDto.setFromLogin("user");
         transferDto.setToLogin("user2");
         transferDto.setAmount(new BigDecimal("100.00"));
 

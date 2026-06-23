@@ -8,7 +8,7 @@ import org.springframework.cloud.contract.stubrunner.spring.StubRunnerProperties
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.TestPropertySource;
 import ru.practicum.transfer.client.AccountsClient;
-import ru.practicum.transfer.dto.AccountDto;
+import ru.practicum.transfer.dto.TransferResponseDto;
 
 import java.math.BigDecimal;
 
@@ -31,20 +31,14 @@ class AccountsClientContractTest {
     private AccountsClient accountsClient;
 
     @Test
-    void shouldDepositMoneyAccordingToContract() {
-        AccountDto result = accountsClient.deposit("user", new BigDecimal("100.00"));
+    void shouldTransferMoneyAccordingToContract() {
+        TransferResponseDto result = accountsClient.transfer(
+                "user", "user2", new BigDecimal("300.00"));
 
         assertNotNull(result);
-        assertEquals("user", result.getLogin());
-        assertEquals(new BigDecimal("1100.00"), result.getBalance());
-    }
-
-    @Test
-    void shouldWithdrawMoneyAccordingToContract() {
-        AccountDto result = accountsClient.withdraw("user", new BigDecimal("100.00"));
-
-        assertNotNull(result);
-        assertEquals("user", result.getLogin());
-        assertEquals(new BigDecimal("900.00"), result.getBalance());
+        assertEquals("user", result.getFromLogin());
+        assertEquals("user2", result.getToLogin());
+        assertEquals(new BigDecimal("300.00"), result.getAmount());
+        assertEquals(new BigDecimal("700.00"), result.getNewBalanceOfSender());
     }
 }

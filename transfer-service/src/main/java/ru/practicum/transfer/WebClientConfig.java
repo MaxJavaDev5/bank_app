@@ -14,9 +14,6 @@ public class WebClientConfig {
     @Value("${accounts.service.url:lb://accounts-service}")
     private String accountsServiceUrl;
 
-    @Value("${notifications.service.url:lb://notifications-service}")
-    private String notificationsServiceUrl;
-
     @Bean
     @LoadBalanced
     public WebClient.Builder loadBalancedWebClientBuilder() {
@@ -33,20 +30,6 @@ public class WebClientConfig {
 
         return builder
                 .baseUrl(accountsServiceUrl)
-                .apply(oauth2.oauth2Configuration())
-                .build();
-    }
-
-    @Bean
-    public WebClient notificationsWebClient(
-            WebClient.Builder builder,
-            OAuth2AuthorizedClientManager authorizedClientManager) {
-        ServletOAuth2AuthorizedClientExchangeFilterFunction oauth2 =
-                new ServletOAuth2AuthorizedClientExchangeFilterFunction(authorizedClientManager);
-        oauth2.setDefaultClientRegistrationId("transfer-client");
-
-        return builder
-                .baseUrl(notificationsServiceUrl)
                 .apply(oauth2.oauth2Configuration())
                 .build();
     }
