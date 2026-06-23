@@ -9,7 +9,7 @@ Contract.make {
         url '/notifications'
         headers {
             contentType(applicationJson())
-            header('Authorization': 'Bearer test-token')
+            header('Authorization': 'Bearer service-token')
         }
         body([
             eventId: 2,

@@ -11,7 +11,7 @@ public class AccountsContractTestConfig {
     WebClient accountsWebClient() {
         return WebClient.builder()
                 .baseUrl("http://127.0.0.1:18083")
-                .defaultHeader("Authorization", "Bearer test-token")
+                .defaultHeader("Authorization", "Bearer service-token")
                 .build();
     }
 }

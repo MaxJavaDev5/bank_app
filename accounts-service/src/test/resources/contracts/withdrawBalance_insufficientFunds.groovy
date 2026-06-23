@@ -3,29 +3,26 @@ package contracts
 import org.springframework.cloud.contract.spec.Contract
 
 Contract.make {
-    description "Снятие денег с баланса аккаунта"
+    description "Снятие денег — недостаточно средств"
     request {
         method 'PUT'
-        url '/accounts/user/balance'
+        url '/accounts/poor-user/balance'
         headers {
             contentType(applicationJson())
             header('Authorization': 'Bearer service-token')
         }
         body([
-            amount: 100.00,
+            amount: 500.00,
             operationType: 'WITHDRAW'
         ])
     }
     response {
-        status 200
+        status 409
         headers {
             contentType(applicationJson())
         }
         body([
-            id: $(anyPositiveInt()),
-            login: 'user',
-            firstName: 'Иван',
-            balance: 900.00
+            error: $(regex(".*недостаточно средств.*"))
         ])
     }
 }

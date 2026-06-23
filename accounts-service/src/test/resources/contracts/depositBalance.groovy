@@ -9,7 +9,7 @@ Contract.make {
         url '/accounts/user/balance'
         headers {
             contentType(applicationJson())
-            header('Authorization': 'Bearer test-token')
+            header('Authorization': 'Bearer service-token')
         }
         body([
             amount: 100.00,

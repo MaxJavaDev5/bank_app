@@ -3,7 +3,7 @@ package contracts
 import org.springframework.cloud.contract.spec.Contract
 
 Contract.make {
-    description "Снятие денег с баланса аккаунта"
+    description "Пополнение баланса — невалидная сумма"
     request {
         method 'PUT'
         url '/accounts/user/balance'
@@ -12,20 +12,17 @@ Contract.make {
             header('Authorization': 'Bearer service-token')
         }
         body([
-            amount: 100.00,
-            operationType: 'WITHDRAW'
+            amount: 0,
+            operationType: 'DEPOSIT'
         ])
     }
     response {
-        status 200
+        status 400
         headers {
             contentType(applicationJson())
         }
         body([
-            id: $(anyPositiveInt()),
-            login: 'user',
-            firstName: 'Иван',
-            balance: 900.00
+            error: $(regex("amount:.*"))
         ])
     }
 }

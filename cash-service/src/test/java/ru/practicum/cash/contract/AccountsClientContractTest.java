@@ -9,11 +9,13 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.context.TestPropertySource;
 import ru.practicum.cash.client.AccountsClient;
 import ru.practicum.cash.dto.AccountDto;
+import ru.practicum.cash.model.RemoteException;
 
 import java.math.BigDecimal;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @SpringBootTest(classes = {AccountsClient.class}, webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @Import({AccountsContractTestConfig.class, StubRunnerLocalRepositoryConfig.class})
@@ -46,5 +48,17 @@ class AccountsClientContractTest {
         assertNotNull(result);
         assertEquals("user", result.getLogin());
         assertEquals(new BigDecimal("900.00"), result.getBalance());
+    }
+
+    @Test
+    void shouldFailWithdrawWhenInsufficientFunds() {
+        assertThrows(RemoteException.class,
+                () -> accountsClient.withdraw("poor-user", new BigDecimal("500.00")));
+    }
+
+    @Test
+    void shouldFailWithdrawWhenAccountNotFound() {
+        assertThrows(RemoteException.class,
+                () -> accountsClient.withdraw("unknown", new BigDecimal("100.00")));
     }
 }

@@ -9,7 +9,7 @@ Contract.make {
         url '/accounts/transfer'
         headers {
             contentType(applicationJson())
-            header('Authorization': 'Bearer test-token')
+            header('Authorization': 'Bearer service-token')
         }
         body([
             fromLogin: 'user',

@@ -3,7 +3,7 @@ package contracts
 import org.springframework.cloud.contract.spec.Contract
 
 Contract.make {
-    description "Создание уведомления об операции"
+    description "Создание уведомления — невалидный запрос"
     request {
         method 'POST'
         url '/notifications'
@@ -13,22 +13,18 @@ Contract.make {
         }
         body([
             eventId: 1,
-            login: 'user',
+            login: '',
             message: 'Ваш счёт пополнен на 100.00 рублей',
             type: 'DEPOSIT'
         ])
     }
     response {
-        status 201
+        status 400
         headers {
             contentType(applicationJson())
         }
         body([
-            id: $(anyPositiveInt()),
-            login: 'user',
-            message: 'Ваш счёт пополнен на 100.00 рублей',
-            type: 'DEPOSIT',
-            eventId: 1
+            error: $(regex("login:.*"))
         ])
     }
 }

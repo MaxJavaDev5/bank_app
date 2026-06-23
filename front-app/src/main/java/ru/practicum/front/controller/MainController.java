@@ -74,7 +74,7 @@ public class MainController {
             @AuthenticationPrincipal OidcUser oidcUser) {
         try {
             BigDecimal amount = BigDecimal.valueOf(value);
-            if (action == CashAction.PUT) {
+            if (action == CashAction.DEPOSIT) {
                 bankClient.deposit(amount);
                 redirectAttributes.addFlashAttribute("info", "Положено %d руб.".formatted(value));
             } else {

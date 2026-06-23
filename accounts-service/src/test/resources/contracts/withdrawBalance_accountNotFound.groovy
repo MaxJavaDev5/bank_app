@@ -3,10 +3,10 @@ package contracts
 import org.springframework.cloud.contract.spec.Contract
 
 Contract.make {
-    description "Снятие денег с баланса аккаунта"
+    description "Снятие денег — аккаунт не найден"
     request {
         method 'PUT'
-        url '/accounts/user/balance'
+        url '/accounts/unknown/balance'
         headers {
             contentType(applicationJson())
             header('Authorization': 'Bearer service-token')
@@ -17,15 +17,12 @@ Contract.make {
         ])
     }
     response {
-        status 200
+        status 404
         headers {
             contentType(applicationJson())
         }
         body([
-            id: $(anyPositiveInt()),
-            login: 'user',
-            firstName: 'Иван',
-            balance: 900.00
+            error: "Аккаунт с логином 'unknown' не найден"
         ])
     }
 }
