@@ -31,3 +31,5 @@ spring:
 notifications:
   service:
     url: lb://notifications-service
+    connect-timeout: 3s
+    timeout: 5s

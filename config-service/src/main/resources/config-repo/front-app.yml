@@ -2,3 +2,5 @@ server:
   port: ${SERVER_PORT:8085}
 gateway:
   url: http://gateway-service:8080
+  connect-timeout: 3s
+  timeout: 10s

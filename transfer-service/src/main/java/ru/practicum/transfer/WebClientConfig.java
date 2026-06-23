@@ -1,5 +1,6 @@
 package ru.practicum.transfer;
 
+import io.netty.channel.ChannelOption;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.client.loadbalancer.LoadBalanced;
 import org.springframework.context.annotation.Bean;
@@ -9,6 +10,7 @@ import org.springframework.security.oauth2.client.OAuth2AuthorizedClientManager;
 import org.springframework.security.oauth2.client.web.reactive.function.client.ServletOAuth2AuthorizedClientExchangeFilterFunction;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.netty.http.client.HttpClient;
+
 import java.time.Duration;
 
 @Configuration
@@ -17,7 +19,10 @@ public class WebClientConfig {
     @Value("${accounts.service.url:lb://accounts-service}")
     private String accountsServiceUrl;
 
-    @Value("${accounts.service.timeout:3s}")
+    @Value("${accounts.service.connect-timeout:3s}")
+    private Duration accountsServiceConnectTimeout;
+
+    @Value("${accounts.service.timeout:5s}")
     private Duration accountsServiceTimeout;
 
     @Bean
@@ -35,6 +40,7 @@ public class WebClientConfig {
         oauth2.setDefaultClientRegistrationId("transfer-client");
 
         HttpClient httpClient = HttpClient.create()
+                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, (int) accountsServiceConnectTimeout.toMillis())
                 .responseTimeout(accountsServiceTimeout);
 
         return builder

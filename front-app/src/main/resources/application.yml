@@ -26,6 +26,8 @@ server:
   port: ${SERVER_PORT:8085}
 gateway:
   url: http://${GATEWAY_HOST:localhost}:8080
+  connect-timeout: 3s
+  timeout: 10s
 eureka:
   client:
     service-url:

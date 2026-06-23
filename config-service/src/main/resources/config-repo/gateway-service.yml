@@ -3,6 +3,11 @@ server:
 spring:
   cloud:
     gateway:
+      server:
+        webflux:
+          httpclient:
+            connect-timeout: 3000
+            response-timeout: 10s
       routes:
         - id: accountsRoute
           uri: lb://accounts-service

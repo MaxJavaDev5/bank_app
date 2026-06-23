@@ -16,6 +16,7 @@ spring:
 accounts:
   service:
     url: lb://accounts-service
+    connect-timeout: 3s
     timeout: 5s
 resilience4j:
   circuitbreaker:

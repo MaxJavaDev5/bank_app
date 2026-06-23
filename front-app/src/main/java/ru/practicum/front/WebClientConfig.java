@@ -1,8 +1,10 @@
 package ru.practicum.front;
 
+import io.netty.channel.ChannelOption;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
@@ -12,6 +14,9 @@ import org.springframework.security.oauth2.core.OAuth2AccessToken;
 import org.springframework.web.reactive.function.client.ClientRequest;
 import org.springframework.web.reactive.function.client.ExchangeFilterFunction;
 import org.springframework.web.reactive.function.client.WebClient;
+import reactor.netty.http.client.HttpClient;
+
+import java.time.Duration;
 
 @Configuration
 public class WebClientConfig {
@@ -21,13 +26,24 @@ public class WebClientConfig {
     @Value("${gateway.url:http://localhost:8080}")
     private String gatewayUrl;
 
+    @Value("${gateway.connect-timeout:3s}")
+    private Duration gatewayConnectTimeout;
+
+    @Value("${gateway.timeout:10s}")
+    private Duration gatewayTimeout;
+
     public WebClientConfig(OAuth2AuthorizedClientService authorizedClientService) {
         this.authorizedClientService = authorizedClientService;
     }
 
     @Bean
     public WebClient gatewayWebClient() {
+        HttpClient httpClient = HttpClient.create()
+                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, (int) gatewayConnectTimeout.toMillis())
+                .responseTimeout(gatewayTimeout);
+
         return WebClient.builder()
+                .clientConnector(new ReactorClientHttpConnector(httpClient))
                 .baseUrl(gatewayUrl)
                 .filter(addAccessTokenHeader())
                 .build();
