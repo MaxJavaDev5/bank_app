@@ -1,0 +1,18 @@
+spring:
+  config:
+    import: ""
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ""
+          jwk-set-uri: ""
+accounts:
+  service:
+    url: http://localhost:8081
+notifications:
+  service:
+    url: http://localhost:8084
+eureka:
+  client:
+    enabled: false
