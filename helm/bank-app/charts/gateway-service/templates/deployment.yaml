@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "gateway-service.fullname" . }}
+  labels:
+    {{- include "gateway-service.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "gateway-service.labels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "gateway-service.labels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.port }}
+          env:
+            - name: KEYCLOAK_INTERNAL_HOST
+              value: {{ .Values.global.keycloak.internalHost | quote }}
+            - name: KEYCLOAK_INTERNAL_PORT
+              value: {{ .Values.global.keycloak.internalPort | quote }}
+            - name: KEYCLOAK_ISSUER_HOST
+              value: {{ .Values.global.keycloak.issuerHost | quote }}
+            - name: KEYCLOAK_ISSUER_PORT
+              value: {{ .Values.global.keycloak.issuerPort | quote }}
+          livenessProbe:
+            {{- toYaml .Values.livenessProbe | nindent 12 }}
+          readinessProbe:
+            {{- toYaml .Values.readinessProbe | nindent 12 }}
