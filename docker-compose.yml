@@ -136,11 +136,11 @@ services:
       KEYCLOAK_ISSUER_PORT: 8180
       KEYCLOAK_INTERNAL_HOST: keycloak
       KEYCLOAK_INTERNAL_PORT: 8080
-      GATEWAY_HOST: gateway-service
+      # полный стек в compose: GATEWAY_URL=http://gateway-service:8080
+      # гибридный режим (backend в K8s): GATEWAY_URL=http://localhost:30080
+      GATEWAY_URL: ${GATEWAY_URL:-http://gateway-service:8080}
     networks:
       - bank-network
     depends_on:
-      gateway-service:
-        condition: service_started
-      accounts-service:
-        condition: service_started
+      keycloak:
+        condition: service_healthy
