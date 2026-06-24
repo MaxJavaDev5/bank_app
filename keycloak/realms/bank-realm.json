@@ -1,0 +1,169 @@
+{
+  "realm": "bank-realm",
+  "enabled": true,
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": false,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": true,
+  "accessTokenLifespan": 3600,
+  "ssoSessionIdleTimeout": 1800,
+  "ssoSessionMaxLifespan": 36000,
+
+  "roles": {
+    "realm": [
+      {
+        "name": "USER",
+        "description": "Bank user",
+        "composite": false,
+        "clientRole": false
+      },
+      {
+        "name": "TRANSFER_WRITE",
+        "description": "Permission to perform transfers",
+        "composite": false,
+        "clientRole": false
+      },
+      {
+        "name": "SERVICE",
+        "description": "Microservice client credentials",
+        "composite": false,
+        "clientRole": false
+      }
+    ]
+  },
+
+  "clients": [
+    {
+      "clientId": "bank-ui",
+      "name": "Bank UI",
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "secret": "front-secret",
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "redirectUris": [
+        "http://localhost:8085/login/oauth2/code/*"
+      ],
+      "webOrigins": [
+        "http://localhost:8085"
+      ],
+      "attributes": {
+        "post.logout.redirect.uris": "http://localhost:8085/*"
+      },
+      "defaultClientScopes": [
+        "web-origins",
+        "role_list",
+        "profile",
+        "email",
+        "roles"
+      ]
+    },
+    {
+      "clientId": "accounts-service",
+      "name": "Accounts Service",
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "secret": "accounts-secret",
+      "standardFlowEnabled": false,
+      "serviceAccountsEnabled": true
+    },
+    {
+      "clientId": "cash-service",
+      "name": "Cash Service",
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "secret": "cash-secret",
+      "standardFlowEnabled": false,
+      "serviceAccountsEnabled": true
+    },
+    {
+      "clientId": "transfer-service",
+      "name": "Transfer Service",
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "secret": "transfer-secret",
+      "standardFlowEnabled": false,
+      "serviceAccountsEnabled": true
+    },
+    {
+      "clientId": "notifications-service",
+      "name": "Notifications Service",
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "secret": "notifications-secret",
+      "standardFlowEnabled": false,
+      "serviceAccountsEnabled": true
+    }
+  ],
+
+  "users": [
+    {
+      "username": "user",
+      "enabled": true,
+      "firstName": "Иван",
+      "lastName": "Иванов",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "password",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["USER", "TRANSFER_WRITE"]
+    },
+    {
+      "username": "user2",
+      "enabled": true,
+      "firstName": "Мария",
+      "lastName": "Петрова",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "password",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["USER", "TRANSFER_WRITE"]
+    },
+    {
+      "username": "user3",
+      "enabled": true,
+      "firstName": "Алексей",
+      "lastName": "Сидоров",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "password",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["USER", "TRANSFER_WRITE"]
+    },
+    {
+      "username": "service-account-accounts-service",
+      "enabled": true,
+      "serviceAccountClientId": "accounts-service",
+      "realmRoles": ["SERVICE"]
+    },
+    {
+      "username": "service-account-cash-service",
+      "enabled": true,
+      "serviceAccountClientId": "cash-service",
+      "realmRoles": ["SERVICE"]
+    },
+    {
+      "username": "service-account-transfer-service",
+      "enabled": true,
+      "serviceAccountClientId": "transfer-service",
+      "realmRoles": ["SERVICE"]
+    },
+    {
+      "username": "service-account-notifications-service",
+      "enabled": true,
+      "serviceAccountClientId": "notifications-service",
+      "realmRoles": ["SERVICE"]
+    }
+  ]
+}

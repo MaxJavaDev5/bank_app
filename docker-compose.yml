@@ -1,0 +1,200 @@
+version: '3.8'
+networks:
+  bank-network:
+    driver: bridge
+volumes:
+  postgres-data:
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: bank-postgres
+    environment:
+      POSTGRES_DB: bank
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - bank-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d bank"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  discovery-service:
+    build: ./discovery-service
+    container_name: bank-discovery
+    ports:
+      - "8761:8761"
+    networks:
+      - bank-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8761/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    depends_on:
+      postgres:
+        condition: service_healthy
+  config-service:
+    build: ./config-service
+    container_name: bank-config
+    ports:
+      - "8888:8888"
+    environment:
+      EUREKA_HOST: discovery-service
+    networks:
+      - bank-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8888/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    depends_on:
+      discovery-service:
+        condition: service_healthy
+  keycloak:
+    image: quay.io/keycloak/keycloak:24.0.5
+    container_name: bank-keycloak
+    command:
+      - start-dev
+      - --http-port=8080
+      - --import-realm
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_HOSTNAME: localhost
+      KC_HOSTNAME_PORT: 8180
+    ports:
+      - "8180:8080"
+    volumes:
+      - ./keycloak/realms:/opt/keycloak/data/import
+    networks:
+      - bank-network
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8080'"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+  gateway-service:
+    build: ./gateway-service
+    container_name: bank-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      EUREKA_HOST: discovery-service
+      CONFIG_HOST: config-service
+      KEYCLOAK_INTERNAL_HOST: keycloak
+      KEYCLOAK_INTERNAL_PORT: 8080
+    networks:
+      - bank-network
+    depends_on:
+      config-service:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+  accounts-service:
+    build: ./accounts-service
+    container_name: bank-accounts
+    ports:
+      - "8081:8081"
+    environment:
+      DB_HOST: postgres
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      EUREKA_HOST: discovery-service
+      CONFIG_HOST: config-service
+      KEYCLOAK_INTERNAL_HOST: keycloak
+      KEYCLOAK_INTERNAL_PORT: 8080
+    networks:
+      - bank-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+      gateway-service:
+        condition: service_started
+  notifications-service:
+    build: ./notifications-service
+    container_name: bank-notifications
+    ports:
+      - "8084:8084"
+    environment:
+      DB_HOST: postgres
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      EUREKA_HOST: discovery-service
+      CONFIG_HOST: config-service
+      KEYCLOAK_INTERNAL_HOST: keycloak
+      KEYCLOAK_INTERNAL_PORT: 8080
+    networks:
+      - bank-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+      gateway-service:
+        condition: service_started
+  cash-service:
+    build: ./cash-service
+    container_name: bank-cash
+    ports:
+      - "8082:8082"
+    environment:
+      EUREKA_HOST: discovery-service
+      CONFIG_HOST: config-service
+      KEYCLOAK_INTERNAL_HOST: keycloak
+      KEYCLOAK_INTERNAL_PORT: 8080
+    networks:
+      - bank-network
+    depends_on:
+      gateway-service:
+        condition: service_started
+      accounts-service:
+        condition: service_started
+      notifications-service:
+        condition: service_started
+  transfer-service:
+    build: ./transfer-service
+    container_name: bank-transfer
+    ports:
+      - "8083:8083"
+    environment:
+      EUREKA_HOST: discovery-service
+      CONFIG_HOST: config-service
+      KEYCLOAK_INTERNAL_HOST: keycloak
+      KEYCLOAK_INTERNAL_PORT: 8080
+    networks:
+      - bank-network
+    depends_on:
+      gateway-service:
+        condition: service_started
+      accounts-service:
+        condition: service_started
+      notifications-service:
+        condition: service_started
+  front-app:
+    build: ./front-app
+    container_name: bank-front
+    ports:
+      - "8085:8085"
+    environment:
+      EUREKA_HOST: discovery-service
+      CONFIG_HOST: config-service
+      KEYCLOAK_ISSUER_HOST: localhost
+      KEYCLOAK_ISSUER_PORT: 8180
+      KEYCLOAK_INTERNAL_HOST: keycloak
+      KEYCLOAK_INTERNAL_PORT: 8080
+      GATEWAY_HOST: gateway-service
+    networks:
+      - bank-network
+    depends_on:
+      gateway-service:
+        condition: service_started
+      accounts-service:
+        condition: service_started

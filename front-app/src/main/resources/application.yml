@@ -1,0 +1,44 @@
+﻿spring:
+  application:
+    name: front-app
+  config:
+    import: optional:configserver:http://${CONFIG_HOST:localhost}:8888
+  security:
+    oauth2:
+      client:
+        registration:
+          bank-ui:
+            client-id: bank-ui
+            client-secret: front-secret
+            authorization-grant-type: authorization_code
+            redirect-uri: "http://localhost:8085/login/oauth2/code/bank-ui"
+            scope:
+              - openid
+              - profile
+        provider:
+          bank-ui:
+            authorization-uri: http://${KEYCLOAK_ISSUER_HOST:localhost}:${KEYCLOAK_ISSUER_PORT:8180}/realms/bank-realm/protocol/openid-connect/auth
+            token-uri: http://${KEYCLOAK_INTERNAL_HOST:localhost}:${KEYCLOAK_INTERNAL_PORT:8180}/realms/bank-realm/protocol/openid-connect/token
+            user-info-uri: http://${KEYCLOAK_INTERNAL_HOST:localhost}:${KEYCLOAK_INTERNAL_PORT:8180}/realms/bank-realm/protocol/openid-connect/userinfo
+            jwk-set-uri: http://${KEYCLOAK_INTERNAL_HOST:localhost}:${KEYCLOAK_INTERNAL_PORT:8180}/realms/bank-realm/protocol/openid-connect/certs
+            user-name-attribute: preferred_username
+server:
+  port: ${SERVER_PORT:8085}
+gateway:
+  url: http://${GATEWAY_HOST:localhost}:8080
+  connect-timeout: 3s
+  timeout: 10s
+eureka:
+  client:
+    service-url:
+      defaultZone: http://${EUREKA_HOST:localhost}:8761/eureka/
+  instance:
+    prefer-ip-address: true
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info
+  endpoint:
+    health:
+      show-details: always

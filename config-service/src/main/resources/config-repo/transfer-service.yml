@@ -1,0 +1,27 @@
+server:
+  port: ${SERVER_PORT:8083}
+spring:
+  security:
+    oauth2:
+      client:
+        registration:
+          transfer-client:
+            client-id: transfer-service
+            client-secret: transfer-secret
+            authorization-grant-type: client_credentials
+            scope: openid
+        provider:
+          transfer-client:
+            token-uri: http://${KEYCLOAK_INTERNAL_HOST:localhost}:${KEYCLOAK_INTERNAL_PORT:8180}/realms/bank-realm/protocol/openid-connect/token
+accounts:
+  service:
+    url: lb://accounts-service
+    connect-timeout: 3s
+    timeout: 5s
+resilience4j:
+  circuitbreaker:
+    instances:
+      accountsService:
+        sliding-window-size: 5
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10s
