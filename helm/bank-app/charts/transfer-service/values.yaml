@@ -1,0 +1,35 @@
+fullnameOverride: transfer-service
+
+replicaCount: 1
+
+image:
+  repository: local/transfer-service
+  tag: latest
+  pullPolicy: Never
+
+service:
+  type: ClusterIP
+  port: 8083
+
+oauth:
+  clientSecret: transfer-secret
+
+global:
+  keycloak:
+    internalHost: host.docker.internal
+    internalPort: "8180"
+    issuerHost: localhost
+    issuerPort: "8180"
+
+livenessProbe:
+  httpGet:
+    path: /actuator/health
+    port: http
+  initialDelaySeconds: 60
+  periodSeconds: 10
+readinessProbe:
+  httpGet:
+    path: /actuator/health
+    port: http
+  initialDelaySeconds: 30
+  periodSeconds: 10
