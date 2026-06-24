@@ -27,8 +27,6 @@ import static org.mockito.Mockito.when;
 @WebMvcTest(AccountController.class)
 @Import({SecurityConfig.class, GlobalExceptionHandler.class, ContractJwtConfig.class})
 @TestPropertySource(properties = {
-        "spring.cloud.config.enabled=false",
-        "eureka.client.enabled=false",
         "spring.security.oauth2.resourceserver.jwt.issuer-uri=",
         "spring.security.oauth2.resourceserver.jwt.jwk-set-uri="
 })

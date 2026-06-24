@@ -1,6 +1,4 @@
 spring:
-  config:
-    import: ""
   flyway:
     enabled: false
   datasource:
@@ -21,6 +19,3 @@ spring:
         jwt:
           issuer-uri: ""
           jwk-set-uri: ""
-eureka:
-  client:
-    enabled: false

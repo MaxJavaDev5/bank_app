@@ -2,7 +2,6 @@ package ru.practicum.transfer;
 
 import io.netty.channel.ChannelOption;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.cloud.client.loadbalancer.LoadBalanced;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
@@ -16,7 +15,7 @@ import java.time.Duration;
 @Configuration
 public class WebClientConfig {
 
-    @Value("${accounts.service.url:lb://accounts-service}")
+    @Value("${accounts.service.url:http://accounts-service:8081}")
     private String accountsServiceUrl;
 
     @Value("${accounts.service.connect-timeout:3s}")
@@ -26,15 +25,7 @@ public class WebClientConfig {
     private Duration accountsServiceTimeout;
 
     @Bean
-    @LoadBalanced
-    public WebClient.Builder loadBalancedWebClientBuilder() {
-        return WebClient.builder();
-    }
-
-    @Bean
-    public WebClient accountsWebClient(
-            WebClient.Builder builder,
-            OAuth2AuthorizedClientManager authorizedClientManager) {
+    public WebClient accountsWebClient(OAuth2AuthorizedClientManager authorizedClientManager) {
         ServletOAuth2AuthorizedClientExchangeFilterFunction oauth2 =
                 new ServletOAuth2AuthorizedClientExchangeFilterFunction(authorizedClientManager);
         oauth2.setDefaultClientRegistrationId("transfer-client");
@@ -43,7 +34,7 @@ public class WebClientConfig {
                 .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, (int) accountsServiceConnectTimeout.toMillis())
                 .responseTimeout(accountsServiceTimeout);
 
-        return builder
+        return WebClient.builder()
                 .clientConnector(new ReactorClientHttpConnector(httpClient))
                 .baseUrl(accountsServiceUrl)
                 .apply(oauth2.oauth2Configuration())

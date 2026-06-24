@@ -2,7 +2,6 @@ package ru.practicum.accounts;
 
 import io.netty.channel.ChannelOption;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.cloud.client.loadbalancer.LoadBalanced;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
@@ -16,7 +15,7 @@ import java.time.Duration;
 @Configuration
 public class WebClientConfig {
 
-    @Value("${notifications.service.url:lb://notifications-service}")
+    @Value("${notifications.service.url:http://notifications-service:8084}")
     private String notificationsServiceUrl;
 
     @Value("${notifications.service.connect-timeout:3s}")
@@ -26,15 +25,7 @@ public class WebClientConfig {
     private Duration notificationsServiceTimeout;
 
     @Bean
-    @LoadBalanced
-    public WebClient.Builder loadBalancedWebClientBuilder() {
-        return WebClient.builder();
-    }
-
-    @Bean
-    public WebClient notificationsWebClient(
-            WebClient.Builder builder,
-            OAuth2AuthorizedClientManager authorizedClientManager) {
+    public WebClient notificationsWebClient(OAuth2AuthorizedClientManager authorizedClientManager) {
         ServletOAuth2AuthorizedClientExchangeFilterFunction oauth2 =
                 new ServletOAuth2AuthorizedClientExchangeFilterFunction(authorizedClientManager);
         oauth2.setDefaultClientRegistrationId("accounts-client");
@@ -43,7 +34,7 @@ public class WebClientConfig {
                 .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, (int) notificationsServiceConnectTimeout.toMillis())
                 .responseTimeout(notificationsServiceTimeout);
 
-        return builder
+        return WebClient.builder()
                 .clientConnector(new ReactorClientHttpConnector(httpClient))
                 .baseUrl(notificationsServiceUrl)
                 .apply(oauth2.oauth2Configuration())

@@ -6,8 +6,6 @@ import org.springframework.test.context.TestPropertySource;
 
 @SpringBootTest
 @TestPropertySource(properties = {
-        "spring.cloud.config.enabled=false",
-        "eureka.client.enabled=false",
         "spring.security.oauth2.resourceserver.jwt.issuer-uri=",
         "spring.security.oauth2.resourceserver.jwt.jwk-set-uri=http://localhost:8180/realms/bank-realm/protocol/openid-connect/certs",
         "spring.security.oauth2.client.registration.cash-client.client-id=cash-client",

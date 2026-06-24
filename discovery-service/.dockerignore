@@ -1,9 +1,0 @@
-# Исходный код — в образ попадает только скомпилированный JAR
-src/
-*.md
-*.xml
-!pom.xml
-.git
-.gitignore
-target/surefire-reports/
-target/test-classes/

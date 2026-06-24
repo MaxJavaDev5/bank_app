@@ -35,8 +35,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(controllers = TransferController.class)
 @Import({SecurityConfig.class, GlobalExceptionHandler.class})
 @TestPropertySource(properties = {
-        "spring.cloud.config.enabled=false",
-        "eureka.client.enabled=false",
         "spring.security.oauth2.resourceserver.jwt.issuer-uri=",
         "spring.security.oauth2.resourceserver.jwt.jwk-set-uri=http://localhost:8180/realms/bank-realm/protocol/openid-connect/certs"
 })
