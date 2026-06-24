@@ -17,13 +17,6 @@ db:
   user: postgres
   password: postgres
 
-global:
-  keycloak:
-    internalHost: host.docker.internal
-    internalPort: "8180"
-    issuerHost: localhost
-    issuerPort: "8180"
-
 livenessProbe:
   httpGet:
     path: /actuator/health

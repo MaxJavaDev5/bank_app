@@ -22,6 +22,8 @@ spec:
           ports:
             - containerPort: 5432
           envFrom:
+            - configMapRef:
+                name: {{ .Values.fullnameOverride }}-config
             - secretRef:
                 name: {{ .Values.fullnameOverride }}-secret
           volumeMounts:

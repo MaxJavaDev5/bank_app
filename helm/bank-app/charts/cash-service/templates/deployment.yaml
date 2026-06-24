@@ -21,19 +21,10 @@ spec:
           ports:
             - name: http
               containerPort: {{ .Values.service.port }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "cash-service.fullname" . }}-config
           env:
-            - name: KEYCLOAK_INTERNAL_HOST
-              value: {{ .Values.global.keycloak.internalHost | quote }}
-            - name: KEYCLOAK_INTERNAL_PORT
-              value: {{ .Values.global.keycloak.internalPort | quote }}
-            - name: KEYCLOAK_ISSUER_HOST
-              value: {{ .Values.global.keycloak.issuerHost | quote }}
-            - name: KEYCLOAK_ISSUER_PORT
-              value: {{ .Values.global.keycloak.issuerPort | quote }}
-            - name: ACCOUNTS_SERVICE_URL
-              value: http://accounts-service:8081
-            - name: NOTIFICATIONS_SERVICE_URL
-              value: http://notifications-service:8084
             - name: SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_CASH-CLIENT_CLIENT-SECRET
               valueFrom:
                 secretKeyRef:

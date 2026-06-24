@@ -21,15 +21,9 @@ spec:
           ports:
             - name: http
               containerPort: {{ .Values.service.port }}
-          env:
-            - name: KEYCLOAK_INTERNAL_HOST
-              value: {{ .Values.global.keycloak.internalHost | quote }}
-            - name: KEYCLOAK_INTERNAL_PORT
-              value: {{ .Values.global.keycloak.internalPort | quote }}
-            - name: KEYCLOAK_ISSUER_HOST
-              value: {{ .Values.global.keycloak.issuerHost | quote }}
-            - name: KEYCLOAK_ISSUER_PORT
-              value: {{ .Values.global.keycloak.issuerPort | quote }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "gateway-service.fullname" . }}-config
           livenessProbe:
             {{- toYaml .Values.livenessProbe | nindent 12 }}
           readinessProbe:
