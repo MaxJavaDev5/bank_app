@@ -137,7 +137,7 @@ services:
       KEYCLOAK_INTERNAL_HOST: keycloak
       KEYCLOAK_INTERNAL_PORT: 8080
       # полный стек в compose: GATEWAY_URL=http://gateway-service:8080
-      # гибридный режим (backend в K8s): GATEWAY_URL=http://localhost:30080
+      # гибридный режим (сервисы в K8s): GATEWAY_URL=http://host.docker.internal:30080
       GATEWAY_URL: ${GATEWAY_URL:-http://gateway-service:8080}
     networks:
       - bank-network

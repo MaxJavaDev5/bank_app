@@ -16,11 +16,8 @@
 | notifications-service | 8084 |
 | front-app | 8085 |
 
-Gateway принимает запросы с фронта и раздаёт их по микросервисам. Notifications просто пишет в лог, что произошло.
 
-## Запуск локально
-
-Нужен JDK 21.
+Для сборки/запуска нужен JDK 21.
 
 ```cmd
 mvn clean package -DskipTests
@@ -35,7 +32,7 @@ Keycloak: http://localhost:8180, admin / admin.
 
 ## Kubernetes
 
-По заданию backend в кластере, Keycloak и front — в docker compose.
+backend сервисы в кластере, Keycloak и front — в docker compose.
 
 Понадобятся Docker Desktop (с включённым Kubernetes), Helm 3, kubectl.
 
@@ -52,10 +49,9 @@ docker build -t local/gateway-service:latest ./gateway-service
 Keycloak и front снаружи кластера:
 
 ```cmd
-set GATEWAY_URL=http://localhost:30080
+set GATEWAY_URL=http://host.docker.internal:30080
 docker compose up -d keycloak front-app
 ```
-
 Деплой backend:
 
 ```cmd
