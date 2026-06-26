@@ -5,6 +5,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataIntegrityViolationException;
 import ru.practicum.notifications.dto.NotificationRequestDto;
 import ru.practicum.notifications.dto.NotificationDto;
 import ru.practicum.notifications.mapper.NotificationMapper;
@@ -85,6 +86,41 @@ class NotificationServiceTest {
         assertEquals(1L, result.notification().getId());
         assertFalse(result.created());
         verify(notificationRepository, never()).save(any());
+    }
+
+    @Test
+    void shouldReturnExistingNotificationWhenSaveFailsDueToRaceCondition() {
+        NotificationRequestDto request = new NotificationRequestDto();
+        request.setEventId(1L);
+        request.setLogin("user");
+        request.setMessage("Пополнение на 500 рублей");
+        request.setType(Notification.NotificationType.DEPOSIT);
+
+        Notification newNotification = new Notification();
+        newNotification.setLogin("user");
+
+        Notification existing = new Notification();
+        existing.setId(1L);
+        existing.setEventId(1L);
+
+        NotificationDto expectedDto = new NotificationDto();
+        expectedDto.setId(1L);
+        expectedDto.setEventId(1L);
+
+        when(notificationRepository.findByEventId(1L))
+                .thenReturn(Optional.empty(), Optional.of(existing));
+        when(notificationMapper.toNotification(request)).thenReturn(newNotification);
+        when(notificationRepository.save(newNotification))
+                .thenThrow(new DataIntegrityViolationException("duplicate"));
+        when(notificationMapper.toNotificationDto(existing)).thenReturn(expectedDto);
+
+        NotificationService.NotificationCreationResult result =
+                notificationService.createNotification(request);
+
+        assertEquals(1L, result.notification().getId());
+        assertFalse(result.created());
+        verify(notificationRepository, times(2)).findByEventId(1L);
+        verify(notificationRepository, times(1)).save(newNotification);
     }
 
     @Test
