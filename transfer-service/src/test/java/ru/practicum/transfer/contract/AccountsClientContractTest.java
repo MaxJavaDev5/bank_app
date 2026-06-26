@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 @Import({AccountsContractTestConfig.class, StubRunnerLocalRepositoryConfig.class})
 @AutoConfigureStubRunner(
         stubsMode = StubRunnerProperties.StubsMode.LOCAL,
-        ids = "ru.practicum:accounts-service:0.0.1-SNAPSHOT:stubs:18083"
+        ids = "ru.practicum:accounts-service:0.0.1-SNAPSHOT:stubs"
 )
 class AccountsClientContractTest {
 

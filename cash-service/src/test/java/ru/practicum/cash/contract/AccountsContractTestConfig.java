@@ -1,6 +1,7 @@
 package ru.practicum.cash.contract;
 
 import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.cloud.contract.stubrunner.StubFinder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.web.reactive.function.client.WebClient;
 
@@ -8,9 +9,10 @@ import org.springframework.web.reactive.function.client.WebClient;
 public class AccountsContractTestConfig {
 
     @Bean
-    WebClient accountsWebClient() {
+    WebClient accountsWebClient(StubFinder stubFinder) {
+        String baseUrl = stubFinder.findStubUrl("ru.practicum", "accounts-service").toString();
         return WebClient.builder()
-                .baseUrl("http://127.0.0.1:18081")
+                .baseUrl(baseUrl)
                 .defaultHeader("Authorization", "Bearer service-token")
                 .build();
     }
