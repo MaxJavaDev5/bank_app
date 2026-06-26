@@ -39,6 +39,9 @@ notifications:
     url: http://notifications-service:8084
     connect-timeout: 3s
     timeout: 5s
+accounts:
+  retry:
+    max-attempts: 3
 outbox:
   batch-size: 10
   max-attempts: 5

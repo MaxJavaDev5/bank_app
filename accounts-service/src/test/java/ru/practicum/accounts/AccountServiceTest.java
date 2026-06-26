@@ -1,10 +1,13 @@
 package ru.practicum.accounts;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.OptimisticLockingFailureException;
+import org.springframework.test.util.ReflectionTestUtils;
 import ru.practicum.accounts.dto.AccountDto;
 import ru.practicum.accounts.dto.TransferResponseDto;
 import ru.practicum.accounts.dto.UpdateAccountDto;
@@ -41,6 +44,11 @@ class AccountServiceTest {
 
     @InjectMocks
     private AccountService accountService;
+
+    @BeforeEach
+    void setUp() {
+        ReflectionTestUtils.setField(accountService, "maxAttempts", 3);
+    }
 
     @Test
     void shouldReturnAccountByLogin() {
@@ -243,5 +251,52 @@ class AccountServiceTest {
                 () -> accountService.transfer("user", "user2", new BigDecimal("300.00")));
 
         verify(outboxRepository, never()).save(any());
+    }
+
+    @Test
+    void shouldRetryUpdateBalanceWhenOptimisticLockConflict() {
+        UpdateBalanceDto updateDto = new UpdateBalanceDto();
+        updateDto.setAmount(new BigDecimal("500.00"));
+        updateDto.setOperationType(UpdateBalanceDto.OperationType.DEPOSIT);
+
+        AccountDto expectedDto = new AccountDto();
+        expectedDto.setBalance(new BigDecimal("1500.00"));
+
+        when(accountRepository.findByLogin("user")).thenAnswer(invocation -> {
+            Account account = new Account();
+            account.setLogin("user");
+            account.setBalance(new BigDecimal("1000.00"));
+            return Optional.of(account);
+        });
+        when(accountRepository.save(any(Account.class)))
+                .thenThrow(new OptimisticLockingFailureException("conflict"))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+        when(accountMapper.toAccountDto(any(Account.class))).thenReturn(expectedDto);
+
+        AccountDto result = accountService.updateBalance("user", updateDto);
+
+        assertNotNull(result);
+        assertEquals(new BigDecimal("1500.00"), result.getBalance());
+        verify(accountRepository, times(2)).save(any(Account.class));
+    }
+
+    @Test
+    void shouldThrowWhenOptimisticLockConflictExhaustedOnUpdateBalance() {
+        Account account = new Account();
+        account.setLogin("user");
+        account.setBalance(new BigDecimal("1000.00"));
+
+        UpdateBalanceDto updateDto = new UpdateBalanceDto();
+        updateDto.setAmount(new BigDecimal("500.00"));
+        updateDto.setOperationType(UpdateBalanceDto.OperationType.DEPOSIT);
+
+        when(accountRepository.findByLogin("user")).thenReturn(Optional.of(account));
+        when(accountRepository.save(account))
+                .thenThrow(new OptimisticLockingFailureException("conflict"));
+
+        assertThrows(OptimisticLockingFailureException.class,
+                () -> accountService.updateBalance("user", updateDto));
+
+        verify(accountRepository, times(3)).save(account);
     }
 }
