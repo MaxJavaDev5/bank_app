@@ -15,6 +15,7 @@ import ru.practicum.accounts.model.AccountNotFoundException;
 import ru.practicum.accounts.model.InsufficientFundsException;
 import ru.practicum.accounts.model.NotificationType;
 import ru.practicum.accounts.model.OutboxEvent;
+import ru.practicum.accounts.model.OutboxStatus;
 import ru.practicum.accounts.model.TransferException;
 import ru.practicum.accounts.repository.AccountRepository;
 import ru.practicum.accounts.repository.OutboxRepository;
@@ -162,7 +163,7 @@ class AccountServiceTest {
         verify(outboxRepository, times(1)).save(argThat(event ->
                 event.getLogin().equals("user")
                         && event.getEventType() == NotificationType.PROFILE_UPDATE
-                        && !event.isProcessed()
+                        && event.getStatus() == OutboxStatus.PENDING
         ));
     }
 

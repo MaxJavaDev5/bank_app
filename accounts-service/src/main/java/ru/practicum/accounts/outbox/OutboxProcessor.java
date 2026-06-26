@@ -20,7 +20,7 @@ public class OutboxProcessor {
     // раз в 5 сек обрабатываем необработанные ивенты из outbox
     @Scheduled(fixedDelay = 5000)
     public void process() {
-        List<OutboxEvent> events = outboxEventService.fetchPending();
+        List<OutboxEvent> events = outboxEventService.claimPending();
 
         for (OutboxEvent event : events) {
             try {
@@ -33,6 +33,7 @@ public class OutboxProcessor {
                 outboxEventService.markProcessed(event.getId());
             } catch (Exception ex) {
                 log.error("Не удалось отправить outbox-событие {}: {}", event.getId(), ex.getMessage());
+                outboxEventService.markFailed(event.getId(), ex.getMessage());
             }
         }
     }

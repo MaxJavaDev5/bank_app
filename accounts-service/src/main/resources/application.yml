@@ -39,6 +39,11 @@ notifications:
     url: http://notifications-service:8084
     connect-timeout: 3s
     timeout: 5s
+outbox:
+  batch-size: 10
+  max-attempts: 5
+  base-delay-seconds: 30
+  lock-timeout-seconds: 60
 server:
   port: ${SERVER_PORT:8081}
 management:

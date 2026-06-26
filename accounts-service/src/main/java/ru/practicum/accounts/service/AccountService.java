@@ -14,11 +14,13 @@ import ru.practicum.accounts.model.AccountNotFoundException;
 import ru.practicum.accounts.model.InsufficientFundsException;
 import ru.practicum.accounts.model.NotificationType;
 import ru.practicum.accounts.model.OutboxEvent;
+import ru.practicum.accounts.model.OutboxStatus;
 import ru.practicum.accounts.model.TransferException;
 import ru.practicum.accounts.repository.AccountRepository;
 import ru.practicum.accounts.repository.OutboxRepository;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.List;
 
 @Service
@@ -113,7 +115,9 @@ public class AccountService {
         event.setLogin(login);
         event.setMessage(message);
         event.setEventType(type);
-        event.setProcessed(false);
+        event.setStatus(OutboxStatus.PENDING);
+        event.setAttempts(0);
+        event.setNextAttemptAt(Instant.now());
         outboxRepository.save(event);
     }
 
