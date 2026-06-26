@@ -3,11 +3,9 @@
     name: gateway-service
   cloud:
     gateway:
-      server:
-        webflux:
-          httpclient:
-            connect-timeout: 3000
-            response-timeout: 10s
+      httpclient:
+        connect-timeout: 3000
+        response-timeout: 10s
       routes:
         - id: accountsRoute
           uri: http://accounts-service:8081
