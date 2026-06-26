@@ -7,9 +7,14 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.ui.ExtendedModelMap;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import ru.practicum.front.client.BankClient;
 import ru.practicum.front.dto.AccountDto;
 import ru.practicum.front.dto.AccountShortDto;
+import ru.practicum.front.dto.CashForm;
+import ru.practicum.front.dto.TransferForm;
+import ru.practicum.front.dto.UpdateAccountForm;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -18,13 +23,19 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class MainControllerTest {
 
     @Mock
     private BankClient bankClient;
+
+    @Mock
+    private BindingResult bindingResult;
+
+    @Mock
+    private RedirectAttributes redirectAttributes;
 
     private MainController mainController;
 
@@ -59,5 +70,41 @@ class MainControllerTest {
         assertEquals("Иванов Иван", model.getAttribute("name"));
         assertEquals(1000, model.getAttribute("sum"));
         assertNotNull(model.getAttribute("accounts"));
+    }
+
+    @Test
+    void shouldReturnValidationErrorsWhenCashFormInvalid() {
+        CashForm form = new CashForm();
+        when(bindingResult.hasErrors()).thenReturn(true);
+
+        String viewName = mainController.editCash(form, bindingResult, redirectAttributes, null);
+
+        assertEquals("redirect:/account", viewName);
+        verify(redirectAttributes).addFlashAttribute(eq("errors"), anyList());
+        verifyNoInteractions(bankClient);
+    }
+
+    @Test
+    void shouldReturnValidationErrorsWhenTransferFormInvalid() {
+        TransferForm form = new TransferForm();
+        when(bindingResult.hasErrors()).thenReturn(true);
+
+        String viewName = mainController.transfer(form, bindingResult, redirectAttributes, null);
+
+        assertEquals("redirect:/account", viewName);
+        verify(redirectAttributes).addFlashAttribute(eq("errors"), anyList());
+        verifyNoInteractions(bankClient);
+    }
+
+    @Test
+    void shouldReturnValidationErrorsWhenUpdateAccountFormInvalid() {
+        UpdateAccountForm form = new UpdateAccountForm();
+        when(bindingResult.hasErrors()).thenReturn(true);
+
+        String viewName = mainController.editAccount(form, bindingResult, redirectAttributes, null);
+
+        assertEquals("redirect:/account", viewName);
+        verify(redirectAttributes).addFlashAttribute(eq("errors"), anyList());
+        verifyNoInteractions(bankClient);
     }
 }
