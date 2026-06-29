@@ -1,6 +1,4 @@
 spring:
-  config:
-    import: ""
   security:
     oauth2:
       resourceserver:
@@ -13,6 +11,3 @@ accounts:
 notifications:
   service:
     url: http://localhost:8084
-eureka:
-  client:
-    enabled: false

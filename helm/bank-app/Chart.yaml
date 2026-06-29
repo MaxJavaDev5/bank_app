@@ -1,0 +1,32 @@
+apiVersion: v2
+name: bank-app
+description: Umbrella Helm chart for Bank App (postgres + microservices + gateway)
+type: application
+version: 0.1.0
+appVersion: "0.0.1-SNAPSHOT"
+
+dependencies:
+  - name: postgres
+    version: "0.1.0"
+    repository: "file://charts/postgres"
+    condition: postgres.enabled
+  - name: notifications-service
+    version: "0.1.0"
+    repository: "file://charts/notifications-service"
+    condition: notifications-service.enabled
+  - name: accounts-service
+    version: "0.1.0"
+    repository: "file://charts/accounts-service"
+    condition: accounts-service.enabled
+  - name: cash-service
+    version: "0.1.0"
+    repository: "file://charts/cash-service"
+    condition: cash-service.enabled
+  - name: transfer-service
+    version: "0.1.0"
+    repository: "file://charts/transfer-service"
+    condition: transfer-service.enabled
+  - name: gateway-service
+    version: "0.1.0"
+    repository: "file://charts/gateway-service"
+    condition: gateway-service.enabled

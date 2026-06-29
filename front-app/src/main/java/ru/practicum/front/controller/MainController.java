@@ -1,5 +1,6 @@
 package ru.practicum.front.controller;
 
+import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -7,6 +8,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
@@ -14,11 +16,13 @@ import ru.practicum.front.client.BankClient;
 import ru.practicum.front.dto.AccountDto;
 import ru.practicum.front.dto.AccountShortDto;
 import ru.practicum.front.dto.CashAction;
+import ru.practicum.front.dto.CashForm;
 import ru.practicum.front.dto.TransferAccountDto;
+import ru.practicum.front.dto.TransferForm;
+import ru.practicum.front.dto.UpdateAccountForm;
 import ru.practicum.front.model.RemoteException;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.util.List;
 
 @Controller
@@ -52,13 +56,17 @@ public class MainController {
 
     @PostMapping("/account")
     public String editAccount(
-            @RequestParam("name") String name,
-            @RequestParam("birthdate") LocalDate birthdate,
+            @Valid @ModelAttribute UpdateAccountForm form,
+            BindingResult bindingResult,
             RedirectAttributes redirectAttributes,
             @AuthenticationPrincipal OidcUser oidcUser) {
+        if (bindingResult.hasErrors()) {
+            redirectAttributes.addFlashAttribute("errors", collectErrors(bindingResult));
+            return "redirect:/account";
+        }
         try {
-            String[] nameParts = splitName(name);
-            bankClient.updateMyAccount(nameParts[1], nameParts[0], birthdate);
+            String[] nameParts = splitName(form.getName());
+            bankClient.updateMyAccount(nameParts[1], nameParts[0], form.getBirthDate());
         } catch (Exception ex) {
             log.warn("Ошибка обновления профиля: {}", ex.getMessage());
             redirectAttributes.addFlashAttribute("errors", List.of(resolveErrorMessage(ex)));
@@ -68,18 +76,22 @@ public class MainController {
 
     @PostMapping("/cash")
     public String editCash(
-            @RequestParam("value") int value,
-            @RequestParam("action") CashAction action,
+            @Valid @ModelAttribute CashForm form,
+            BindingResult bindingResult,
             RedirectAttributes redirectAttributes,
             @AuthenticationPrincipal OidcUser oidcUser) {
+        if (bindingResult.hasErrors()) {
+            redirectAttributes.addFlashAttribute("errors", collectErrors(bindingResult));
+            return "redirect:/account";
+        }
         try {
-            BigDecimal amount = BigDecimal.valueOf(value);
-            if (action == CashAction.DEPOSIT) {
+            BigDecimal amount = form.getAmount();
+            if (form.getAction() == CashAction.DEPOSIT) {
                 bankClient.deposit(amount);
-                redirectAttributes.addFlashAttribute("info", "Положено %d руб.".formatted(value));
+                redirectAttributes.addFlashAttribute("info", "Положено " + amount + " руб.");
             } else {
                 bankClient.withdraw(amount);
-                redirectAttributes.addFlashAttribute("info", "Снято %d руб".formatted(value));
+                redirectAttributes.addFlashAttribute("info", "Снято " + amount + " руб.");
             }
         } catch (Exception ex) {
             log.warn("Ошибка операции с наличными: {}", ex.getMessage());
@@ -90,15 +102,19 @@ public class MainController {
 
     @PostMapping("/transfer")
     public String transfer(
-            @RequestParam("value") int value,
-            @RequestParam("login") String login,
+            @Valid @ModelAttribute TransferForm form,
+            BindingResult bindingResult,
             RedirectAttributes redirectAttributes,
             @AuthenticationPrincipal OidcUser oidcUser) {
+        if (bindingResult.hasErrors()) {
+            redirectAttributes.addFlashAttribute("errors", collectErrors(bindingResult));
+            return "redirect:/account";
+        }
         try {
-            bankClient.transfer(login, BigDecimal.valueOf(value));
-            String recipientName = findAccountName(login);
+            bankClient.transfer(form.getToLogin(), form.getAmount());
+            String recipientName = findAccountName(form.getToLogin());
             redirectAttributes.addFlashAttribute("info",
-                    "Успешно переведено %d руб клиенту %s".formatted(value, recipientName));
+                    "Успешно переведено " + form.getAmount() + " руб клиенту " + recipientName);
         } catch (Exception ex) {
             log.warn("Ошибка перевода: {}", ex.getMessage());
             redirectAttributes.addFlashAttribute("errors", List.of(resolveErrorMessage(ex)));
@@ -181,6 +197,12 @@ public class MainController {
                 trimmed.substring(0, spaceIndex),
                 trimmed.substring(spaceIndex + 1).trim()
         };
+    }
+
+    private List<String> collectErrors(BindingResult bindingResult) {
+        return bindingResult.getFieldErrors().stream()
+                .map(error -> error.getDefaultMessage())
+                .toList();
     }
 
     private String resolveErrorMessage(Exception ex) {

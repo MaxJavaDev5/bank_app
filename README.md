@@ -1,52 +1,72 @@
 # My Bank App
 
-Микросервисное банковское приложение. Спринт 9, Яндекс Практикум.
+Учебный проект «Банк» 
+Яндекс Практикум (спринты 9–10).
 
-## Стек
+Стек: Java 21, Spring Boot, Gateway, Keycloak, PostgreSQL, Helm/Kubernetes.
 
-Java 21, Maven, Spring Boot 3.4.4, Spring Cloud 2024.0.1, Eureka, Config Server, Gateway, Keycloak, PostgreSQL, JPA, Resilience4j, Spring Cloud Contract.
+## Сервисы
 
-## Модули
+| Сервис | Порт |
+|--------|------|
+| gateway-service | 8080 |
+| accounts-service | 8081 |
+| cash-service | 8082 |
+| transfer-service | 8083 |
+| notifications-service | 8084 |
+| front-app | 8085 |
 
-| Модуль | Порт | Назначение |
-|--------|------|------------|
-| discovery-service | 8761 | Eureka |
-| config-service | 8888 | Config Server |
-| gateway-service | 8080 | API Gateway |
-| accounts-service | 8081 | Аккаунты, баланс, outbox |
-| cash-service | 8082 | Пополнение и снятие |
-| transfer-service | 8083 | Переводы |
-| notifications-service | 8084 | Уведомления |
-| front-app | 8085 | UI |
 
-## Запуск
+Для сборки/запуска нужен JDK 21.
 
-Для зупуска локально:
-
-```bash
+```cmd
 mvn clean package -DskipTests
-docker-compose up --build
+docker compose up --build
 ```
 
 UI: http://localhost:8085
 
-Пользователи: `user` / `user2` / `user3`, пароль `password`.
+Пользователи `user`, `user2`, `user3` — пароль `password`.
 
-Keycloak admin: `admin` / `admin`, http://localhost:8180
+Keycloak: http://localhost:8180, admin / admin.
 
-## Сборка и тесты
+## Kubernetes
 
-Нужен **JDK 21**.
+backend сервисы в кластере, Keycloak и front — в docker compose.
 
-```bash
-java -version
-mvn -version
+Понадобятся Docker Desktop (с включённым Kubernetes), Helm 3, kubectl.
+
+Сборка образов (из корня проекта):
+
+```cmd
+docker build -t local/accounts-service:latest ./accounts-service
+docker build -t local/cash-service:latest ./cash-service
+docker build -t local/transfer-service:latest ./transfer-service
+docker build -t local/notifications-service:latest ./notifications-service
+docker build -t local/gateway-service:latest ./gateway-service
+```
+
+Keycloak и front снаружи кластера:
+
+```cmd
+set GATEWAY_URL=http://host.docker.internal:30080
+docker compose up -d keycloak front-app
+```
+Деплой backend:
+
+```cmd
+helm dependency update helm/bank-app
+helm upgrade --install bank-app helm/bank-app --namespace bank --create-namespace
+kubectl get pods -n bank
+helm test bank-app -n bank
+```
+
+Gateway снаружи доступен на NodePort 30080. Front ходит на http://localhost:8085.
+
+Чарты лежат в `helm/bank-app/` (зонтичный чарт и сабчарты на postgres + сервисы).
+
+## Тесты
+
+```cmd
 mvn clean verify
-```
-
-## Схема
-
-```
-front-app → gateway → accounts / cash / transfer / notifications
-postgres, keycloak, discovery, config
 ```

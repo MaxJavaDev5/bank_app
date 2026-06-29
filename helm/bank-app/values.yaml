@@ -1,0 +1,45 @@
+global:
+  namespace: bank
+  imageRegistry: local
+  keycloak:
+    internalHost: host.docker.internal
+    internalPort: "8180"
+    issuerHost: localhost
+    issuerPort: "8180"
+
+postgres:
+  enabled: true
+
+notifications-service:
+  enabled: true
+  image:
+    repository: local/notifications-service
+    pullPolicy: Never
+
+accounts-service:
+  enabled: true
+  image:
+    repository: local/accounts-service
+    pullPolicy: Never
+
+cash-service:
+  enabled: true
+  image:
+    repository: local/cash-service
+    pullPolicy: Never
+
+transfer-service:
+  enabled: true
+  image:
+    repository: local/transfer-service
+    pullPolicy: Never
+
+gateway-service:
+  enabled: true
+  image:
+    repository: local/gateway-service
+    pullPolicy: Never
+  service:
+    type: NodePort
+    port: 8080
+    nodePort: 30080

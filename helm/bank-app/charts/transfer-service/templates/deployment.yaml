@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "transfer-service.fullname" . }}
+  labels:
+    {{- include "transfer-service.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "transfer-service.labels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "transfer-service.labels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.port }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "transfer-service.fullname" . }}-config
+          env:
+            - name: SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_TRANSFER-CLIENT_CLIENT-SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "transfer-service.fullname" . }}-secret
+                  key: client-secret
+          livenessProbe:
+            {{- toYaml .Values.livenessProbe | nindent 12 }}
+          readinessProbe:
+            {{- toYaml .Values.readinessProbe | nindent 12 }}

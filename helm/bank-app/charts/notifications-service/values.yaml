@@ -1,0 +1,31 @@
+fullnameOverride: notifications-service
+
+replicaCount: 1
+
+image:
+  repository: local/notifications-service
+  tag: latest
+  pullPolicy: Never
+
+service:
+  type: ClusterIP
+  port: 8084
+
+db:
+  host: postgres
+  name: bank
+  user: postgres
+  password: postgres
+
+livenessProbe:
+  httpGet:
+    path: /actuator/health
+    port: http
+  initialDelaySeconds: 60
+  periodSeconds: 10
+readinessProbe:
+  httpGet:
+    path: /actuator/health
+    port: http
+  initialDelaySeconds: 30
+  periodSeconds: 10

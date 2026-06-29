@@ -6,7 +6,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cloud.contract.stubrunner.spring.AutoConfigureStubRunner;
 import org.springframework.cloud.contract.stubrunner.spring.StubRunnerProperties;
 import org.springframework.context.annotation.Import;
-import org.springframework.test.context.TestPropertySource;
 import ru.practicum.cash.client.AccountsClient;
 import ru.practicum.cash.dto.AccountDto;
 import ru.practicum.cash.model.RemoteException;
@@ -19,13 +18,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @SpringBootTest(classes = {AccountsClient.class}, webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @Import({AccountsContractTestConfig.class, StubRunnerLocalRepositoryConfig.class})
-@TestPropertySource(properties = {
-        "spring.cloud.config.enabled=false",
-        "eureka.client.enabled=false"
-})
 @AutoConfigureStubRunner(
         stubsMode = StubRunnerProperties.StubsMode.LOCAL,
-        ids = "ru.practicum:accounts-service:0.0.1-SNAPSHOT:stubs:18081"
+        ids = "ru.practicum:accounts-service:0.0.1-SNAPSHOT:stubs"
 )
 class AccountsClientContractTest {
 

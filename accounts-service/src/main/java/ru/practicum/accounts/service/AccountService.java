@@ -1,6 +1,10 @@
 package ru.practicum.accounts.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.accounts.dto.AccountDto;
@@ -14,13 +18,17 @@ import ru.practicum.accounts.model.AccountNotFoundException;
 import ru.practicum.accounts.model.InsufficientFundsException;
 import ru.practicum.accounts.model.NotificationType;
 import ru.practicum.accounts.model.OutboxEvent;
+import ru.practicum.accounts.model.OutboxStatus;
 import ru.practicum.accounts.model.TransferException;
 import ru.practicum.accounts.repository.AccountRepository;
 import ru.practicum.accounts.repository.OutboxRepository;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.List;
+import java.util.function.Supplier;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AccountService {
@@ -28,6 +36,10 @@ public class AccountService {
     private final AccountRepository accountRepository;
     private final AccountMapper accountMapper;
     private final OutboxRepository outboxRepository;
+    private final ObjectProvider<AccountService> selfProvider;
+
+    @Value("${accounts.retry.max-attempts:3}")
+    private int maxAttempts;
 
     // возращает аккаунт по логину
     @Transactional(readOnly = true)
@@ -51,8 +63,12 @@ public class AccountService {
         return accountMapper.toAccountShortDtoList(accounts);
     }
 
-    @Transactional
     public AccountDto updateBalance(String login, UpdateBalanceDto updateBalanceDto) {
+        return runWithRetry(() -> self().updateBalanceTx(login, updateBalanceDto));
+    }
+
+    @Transactional
+    public AccountDto updateBalanceTx(String login, UpdateBalanceDto updateBalanceDto) {
         Account account = findAccountOrThrow(login);
         BigDecimal amount = updateBalanceDto.getAmount();
 
@@ -71,8 +87,12 @@ public class AccountService {
         return accountMapper.toAccountDto(savedAccount);
     }
 
-    @Transactional
     public TransferResponseDto transfer(String fromLogin, String toLogin, BigDecimal amount) {
+        return runWithRetry(() -> self().transferTx(fromLogin, toLogin, amount));
+    }
+
+    @Transactional
+    public TransferResponseDto transferTx(String fromLogin, String toLogin, BigDecimal amount) {
         if (fromLogin.equals(toLogin)) {
             throw new TransferException("Нельзя переводить деньги самому себе");
         }
@@ -113,12 +133,34 @@ public class AccountService {
         event.setLogin(login);
         event.setMessage(message);
         event.setEventType(type);
-        event.setProcessed(false);
+        event.setStatus(OutboxStatus.PENDING);
+        event.setAttempts(0);
+        event.setNextAttemptAt(Instant.now());
         outboxRepository.save(event);
     }
 
     private Account findAccountOrThrow(String login) {
         return accountRepository.findByLogin(login)
                 .orElseThrow(() -> new AccountNotFoundException(login));
+    }
+
+    private AccountService self() {
+        return selfProvider != null ? selfProvider.getObject() : this;
+    }
+
+    // повторяем операцию при конкурентном конфликте версий
+    private <T> T runWithRetry(Supplier<T> action) {
+        int attempt = 1;
+        while (true) {
+            try {
+                return action.get();
+            } catch (OptimisticLockingFailureException ex) {
+                if (attempt >= maxAttempts) {
+                    throw ex;
+                }
+                log.warn("Конфликт версий, повтор {} из {}", attempt, maxAttempts - 1);
+                attempt++;
+            }
+        }
     }
 }

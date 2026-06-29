@@ -4,7 +4,7 @@ import io.restassured.module.mockmvc.RestAssuredMockMvc;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
@@ -27,8 +27,6 @@ import static org.mockito.Mockito.when;
 @WebMvcTest(AccountController.class)
 @Import({SecurityConfig.class, GlobalExceptionHandler.class, ContractJwtConfig.class})
 @TestPropertySource(properties = {
-        "spring.cloud.config.enabled=false",
-        "eureka.client.enabled=false",
         "spring.security.oauth2.resourceserver.jwt.issuer-uri=",
         "spring.security.oauth2.resourceserver.jwt.jwk-set-uri="
 })
@@ -37,7 +35,7 @@ public abstract class ContractBaseTest {
     @Autowired
     private MockMvc mockMvc;
 
-    @MockBean
+    @MockitoBean
     private AccountService accountService;
 
     @BeforeEach
