@@ -13,6 +13,7 @@ import ru.practicum.accounts.model.OutboxStatus;
 import ru.practicum.accounts.repository.OutboxRepository;
 
 import java.time.Instant;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -34,6 +35,78 @@ class OutboxEventServiceTest {
         instanceId = (String) ReflectionTestUtils.getField(outboxEventService, "instanceId");
         ReflectionTestUtils.setField(outboxEventService, "maxAttempts", 5);
         ReflectionTestUtils.setField(outboxEventService, "baseDelaySeconds", 30L);
+        ReflectionTestUtils.setField(outboxEventService, "batchSize", 10);
+        ReflectionTestUtils.setField(outboxEventService, "lockTimeoutSeconds", 60L);
+    }
+
+    @Test
+    void shouldClaimDuePendingEvent() {
+        OutboxEvent event = saveEvent(OutboxStatus.PENDING, Instant.now().minusSeconds(10), null, null);
+
+        List<OutboxEvent> claimed = outboxEventService.claimPending();
+
+        assertEquals(1, claimed.size());
+        assertEquals(event.getId(), claimed.getFirst().getId());
+        OutboxEvent updated = outboxRepository.findById(event.getId()).orElseThrow();
+        assertEquals(OutboxStatus.PROCESSING, updated.getStatus());
+        assertEquals(instanceId, updated.getLockedBy());
+        assertNotNull(updated.getLockedAt());
+    }
+
+    @Test
+    void shouldNotClaimNotYetDueFailedEvent() {
+        OutboxEvent event = saveEvent(OutboxStatus.FAILED, Instant.now().plusSeconds(300), null, null);
+
+        List<OutboxEvent> claimed = outboxEventService.claimPending();
+
+        assertTrue(claimed.isEmpty());
+        OutboxEvent unchanged = outboxRepository.findById(event.getId()).orElseThrow();
+        assertEquals(OutboxStatus.FAILED, unchanged.getStatus());
+        assertNull(unchanged.getLockedBy());
+    }
+
+    @Test
+    void shouldNotClaimProcessedOrDeadEvents() {
+        saveEvent(OutboxStatus.PROCESSED, Instant.now().minusSeconds(10), null, null);
+        saveEvent(OutboxStatus.DEAD, Instant.now().minusSeconds(10), null, null);
+
+        List<OutboxEvent> claimed = outboxEventService.claimPending();
+
+        assertTrue(claimed.isEmpty());
+    }
+
+    @Test
+    void shouldReclaimStuckProcessingEventAfterTimeout() {
+        OutboxEvent event = saveEvent(
+                OutboxStatus.PROCESSING,
+                null,
+                "other-instance",
+                Instant.now().minusSeconds(120));
+
+        List<OutboxEvent> claimed = outboxEventService.claimPending();
+
+        assertEquals(1, claimed.size());
+        assertEquals(event.getId(), claimed.getFirst().getId());
+        OutboxEvent updated = outboxRepository.findById(event.getId()).orElseThrow();
+        assertEquals(OutboxStatus.PROCESSING, updated.getStatus());
+        assertEquals(instanceId, updated.getLockedBy());
+        assertNotNull(updated.getLockedAt());
+    }
+
+    @Test
+    void shouldNotReclaimFreshlyLockedProcessingEvent() {
+        OutboxEvent event = saveEvent(
+                OutboxStatus.PROCESSING,
+                null,
+                "other-instance",
+                Instant.now().minusSeconds(5));
+
+        List<OutboxEvent> claimed = outboxEventService.claimPending();
+
+        assertTrue(claimed.isEmpty());
+        OutboxEvent unchanged = outboxRepository.findById(event.getId()).orElseThrow();
+        assertEquals(OutboxStatus.PROCESSING, unchanged.getStatus());
+        assertEquals("other-instance", unchanged.getLockedBy());
     }
 
     @Test
@@ -108,14 +181,39 @@ class OutboxEventServiceTest {
         assertNotNull(updated.getNextAttemptAt());
     }
 
+    @Test
+    void shouldMarkDeadWhenMaxAttemptsReached() {
+        OutboxEvent event = saveProcessingEvent(instanceId);
+        event.setAttempts(4);
+        outboxRepository.save(event);
+
+        outboxEventService.markFailed(event.getId(), "final failure");
+
+        OutboxEvent updated = outboxRepository.findById(event.getId()).orElseThrow();
+        assertEquals(OutboxStatus.DEAD, updated.getStatus());
+        assertEquals(5, updated.getAttempts());
+        assertEquals("final failure", updated.getLastError());
+        assertNull(updated.getNextAttemptAt());
+        assertNull(updated.getLockedBy());
+        assertNull(updated.getLockedAt());
+    }
+
     private OutboxEvent saveProcessingEvent(String lockedBy) {
+        return saveEvent(OutboxStatus.PROCESSING, null, lockedBy, Instant.now());
+    }
+
+    private OutboxEvent saveEvent(OutboxStatus status,
+                                  Instant nextAttemptAt,
+                                  String lockedBy,
+                                  Instant lockedAt) {
         OutboxEvent event = new OutboxEvent();
         event.setLogin("user");
         event.setMessage("test message");
         event.setEventType(NotificationType.DEPOSIT);
-        event.setStatus(OutboxStatus.PROCESSING);
+        event.setStatus(status);
+        event.setNextAttemptAt(nextAttemptAt);
         event.setLockedBy(lockedBy);
-        event.setLockedAt(Instant.now());
+        event.setLockedAt(lockedAt);
         return outboxRepository.save(event);
     }
 }
