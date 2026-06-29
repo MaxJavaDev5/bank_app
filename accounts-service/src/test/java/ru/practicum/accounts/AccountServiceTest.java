@@ -12,16 +12,14 @@ import ru.practicum.accounts.dto.AccountDto;
 import ru.practicum.accounts.dto.TransferResponseDto;
 import ru.practicum.accounts.dto.UpdateAccountDto;
 import ru.practicum.accounts.dto.UpdateBalanceDto;
+import ru.practicum.accounts.kafka.NotificationProducer;
 import ru.practicum.accounts.mapper.AccountMapper;
 import ru.practicum.accounts.model.Account;
 import ru.practicum.accounts.model.AccountNotFoundException;
 import ru.practicum.accounts.model.InsufficientFundsException;
 import ru.practicum.accounts.model.NotificationType;
-import ru.practicum.accounts.model.OutboxEvent;
-import ru.practicum.accounts.model.OutboxStatus;
 import ru.practicum.accounts.model.TransferException;
 import ru.practicum.accounts.repository.AccountRepository;
-import ru.practicum.accounts.repository.OutboxRepository;
 import ru.practicum.accounts.service.AccountService;
 
 import java.math.BigDecimal;
@@ -40,7 +38,7 @@ class AccountServiceTest {
     private AccountMapper accountMapper;
 
     @Mock
-    private OutboxRepository outboxRepository;
+    private NotificationProducer notificationProducer;
 
     @InjectMocks
     private AccountService accountService;
@@ -98,10 +96,7 @@ class AccountServiceTest {
 
         assertEquals(new BigDecimal("1500.00"), account.getBalance());
         assertNotNull(result);
-        verify(outboxRepository, times(1)).save(argThat(event ->
-                event.getLogin().equals("user")
-                        && event.getEventType() == NotificationType.DEPOSIT
-        ));
+        verify(notificationProducer, never()).send(anyString(), anyString(), any());
     }
 
     @Test
@@ -125,10 +120,7 @@ class AccountServiceTest {
 
         assertEquals(new BigDecimal("700.00"), account.getBalance());
         assertNotNull(result);
-        verify(outboxRepository, times(1)).save(argThat(event ->
-                event.getLogin().equals("user")
-                        && event.getEventType() == NotificationType.WITHDRAW
-        ));
+        verify(notificationProducer, never()).send(anyString(), anyString(), any());
     }
 
     @Test
@@ -150,7 +142,7 @@ class AccountServiceTest {
     }
 
     @Test
-    void shouldSaveOutboxEventWhenAccountUpdated() {
+    void shouldSendNotificationWhenAccountUpdated() {
         Account account = new Account();
         account.setLogin("user");
 
@@ -168,11 +160,8 @@ class AccountServiceTest {
 
         accountService.updateAccount("user", updateDto);
 
-        verify(outboxRepository, times(1)).save(argThat(event ->
-                event.getLogin().equals("user")
-                        && event.getEventType() == NotificationType.PROFILE_UPDATE
-                        && event.getStatus() == OutboxStatus.PENDING
-        ));
+        verify(notificationProducer, times(1))
+                .send(eq("user"), anyString(), eq(NotificationType.PROFILE_UPDATE));
     }
 
     @Test
@@ -195,7 +184,7 @@ class AccountServiceTest {
         assertEquals(new BigDecimal("700.00"), sender.getBalance());
         assertEquals(new BigDecimal("800.00"), receiver.getBalance());
         assertEquals(new BigDecimal("700.00"), result.getSenderBalance());
-        verify(outboxRepository, times(2)).save(any(OutboxEvent.class));
+        verify(notificationProducer, never()).send(anyString(), anyString(), any());
     }
 
     @Test
@@ -233,7 +222,7 @@ class AccountServiceTest {
     }
 
     @Test
-    void shouldNotSaveOutboxWhenTransferFailsOnSave() {
+    void shouldNotSendNotificationWhenTransferFailsOnSave() {
         Account sender = new Account();
         sender.setLogin("user");
         sender.setBalance(new BigDecimal("1000.00"));
@@ -250,7 +239,7 @@ class AccountServiceTest {
         assertThrows(RuntimeException.class,
                 () -> accountService.transfer("user", "user2", new BigDecimal("300.00")));
 
-        verify(outboxRepository, never()).save(any());
+        verify(notificationProducer, never()).send(anyString(), anyString(), any());
     }
 
     @Test
