@@ -1,5 +1,6 @@
 package ru.practicum.accounts.outbox;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -11,6 +12,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @Service
 public class OutboxEventService {
 
@@ -45,32 +47,35 @@ public class OutboxEventService {
 
     @Transactional
     public void markProcessed(Long eventId) {
-        outboxRepository.findById(eventId).ifPresent(event -> {
-            event.setStatus(OutboxStatus.PROCESSED);
-            event.setLockedAt(null);
-            event.setLockedBy(null);
-            event.setLastError(null);
-            outboxRepository.save(event);
-        });
+        int updated = outboxRepository.markProcessed(eventId, instanceId);
+        if (updated == 0) {
+            log.warn("Событие {} уже не принадлежит инстансу {} — пропускаем markProcessed",
+                    eventId, instanceId);
+        }
     }
 
     @Transactional
     public void markFailed(Long eventId, String error) {
-        outboxRepository.findById(eventId).ifPresent(event -> {
+        outboxRepository.findById(eventId).ifPresentOrElse(event -> {
             int newAttempts = event.getAttempts() + 1;
-            event.setAttempts(newAttempts);
-            event.setLastError(truncateError(error));
-            event.setLockedAt(null);
-            event.setLockedBy(null);
+            String truncatedError = truncateError(error);
+            OutboxStatus newStatus;
+            Instant nextAttemptAt = null;
 
             if (newAttempts >= maxAttempts) {
-                event.setStatus(OutboxStatus.DEAD);
+                newStatus = OutboxStatus.DEAD;
             } else {
-                event.setStatus(OutboxStatus.FAILED);
-                event.setNextAttemptAt(Instant.now().plusSeconds(calculateBackoff(newAttempts)));
+                newStatus = OutboxStatus.FAILED;
+                nextAttemptAt = Instant.now().plusSeconds(calculateBackoff(newAttempts));
             }
-            outboxRepository.save(event);
-        });
+
+            int updated = outboxRepository.markFailed(
+                    eventId, instanceId, newStatus, newAttempts, truncatedError, nextAttemptAt);
+            if (updated == 0) {
+                log.warn("Событие {} уже не принадлежит инстансу {} — пропускаем markFailed",
+                        eventId, instanceId);
+            }
+        }, () -> log.warn("Событие {} не найдено — пропускаем markFailed", eventId));
     }
 
     private long calculateBackoff(int attempts) {
