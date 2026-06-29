@@ -1,0 +1,12 @@
+fullnameOverride: kafka
+
+image:
+  repository: apache/kafka
+  tag: "3.8.1"
+  pullPolicy: IfNotPresent
+
+# фиксированный cluster id (валидный base64 из 16 байт), чтобы при рестарте том не переформатировался
+clusterId: "5L6g3nShT-eMCtK--X86sw"
+
+persistence:
+  size: 1Gi

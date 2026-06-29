@@ -10,6 +10,9 @@ global:
 postgres:
   enabled: true
 
+kafka:
+  enabled: true
+
 notifications-service:
   enabled: true
   image:
