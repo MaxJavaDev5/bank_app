@@ -17,6 +17,13 @@
         jwt:
           issuer-uri: http://${KEYCLOAK_ISSUER_HOST:localhost}:${KEYCLOAK_ISSUER_PORT:8180}/realms/bank-realm
           jwk-set-uri: http://${KEYCLOAK_INTERNAL_HOST:localhost}:${KEYCLOAK_INTERNAL_PORT:8180}/realms/bank-realm/protocol/openid-connect/certs
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        spring.json.add.type.headers: false
 server:
   port: ${SERVER_PORT:8083}
 accounts:
@@ -31,9 +38,6 @@ resilience4j:
         sliding-window-size: 5
         failure-rate-threshold: 50
         wait-duration-in-open-state: 10s
-notifications:
-  service:
-    url: http://notifications-service:8084
 management:
   endpoints:
     web:
