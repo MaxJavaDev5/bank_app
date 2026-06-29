@@ -17,15 +17,5 @@ db:
   user: postgres
   password: postgres
 
-livenessProbe:
-  httpGet:
-    path: /actuator/health
-    port: http
-  initialDelaySeconds: 60
-  periodSeconds: 10
-readinessProbe:
-  httpGet:
-    path: /actuator/health
-    port: http
-  initialDelaySeconds: 30
-  periodSeconds: 10
+kafka:
+  bootstrapServers: kafka:9092

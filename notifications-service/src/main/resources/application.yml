@@ -18,14 +18,17 @@
     properties:
       hibernate:
         default_schema: notifications
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          issuer-uri: http://${KEYCLOAK_ISSUER_HOST:localhost}:${KEYCLOAK_ISSUER_PORT:8180}/realms/bank-realm
-          jwk-set-uri: http://${KEYCLOAK_INTERNAL_HOST:localhost}:${KEYCLOAK_INTERNAL_PORT:8180}/realms/bank-realm/protocol/openid-connect/certs
-server:
-  port: ${SERVER_PORT:8084}
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    consumer:
+      group-id: notifications-service
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.use.type.headers: false
+        spring.json.value.default.type: ru.practicum.notifications.dto.NotificationRequestDto
+        spring.json.trusted.packages: "*"
 management:
   endpoints:
     web:
