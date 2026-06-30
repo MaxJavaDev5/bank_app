@@ -97,12 +97,15 @@ services:
       DB_PASSWORD: postgres
       KEYCLOAK_INTERNAL_HOST: keycloak
       KEYCLOAK_INTERNAL_PORT: 8080
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
     networks:
       - bank-network
     depends_on:
       postgres:
         condition: service_healthy
       keycloak:
+        condition: service_healthy
+      kafka:
         condition: service_healthy
   notifications-service:
     build: ./notifications-service
@@ -115,12 +118,15 @@ services:
       DB_PASSWORD: postgres
       KEYCLOAK_INTERNAL_HOST: keycloak
       KEYCLOAK_INTERNAL_PORT: 8080
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
     networks:
       - bank-network
     depends_on:
       postgres:
         condition: service_healthy
       keycloak:
+        condition: service_healthy
+      kafka:
         condition: service_healthy
   cash-service:
     build: ./cash-service
@@ -130,6 +136,7 @@ services:
     environment:
       KEYCLOAK_INTERNAL_HOST: keycloak
       KEYCLOAK_INTERNAL_PORT: 8080
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
     networks:
       - bank-network
     depends_on:
@@ -137,6 +144,8 @@ services:
         condition: service_started
       notifications-service:
         condition: service_started
+      kafka:
+        condition: service_healthy
   transfer-service:
     build: ./transfer-service
     container_name: bank-transfer
@@ -145,6 +154,7 @@ services:
     environment:
       KEYCLOAK_INTERNAL_HOST: keycloak
       KEYCLOAK_INTERNAL_PORT: 8080
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
     networks:
       - bank-network
     depends_on:
@@ -152,6 +162,8 @@ services:
         condition: service_started
       notifications-service:
         condition: service_started
+      kafka:
+        condition: service_healthy
   front-app:
     build: ./front-app
     container_name: bank-front
