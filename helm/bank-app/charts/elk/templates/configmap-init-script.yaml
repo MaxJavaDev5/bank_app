@@ -1,0 +1,62 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "elk.elasticsearch.fullname" . }}-init-script
+  labels:
+    {{- include "elk.elasticsearch.labels" . | nindent 4 }}
+data:
+  init.sh: |
+    #!/bin/sh
+
+    set -e
+
+    ES_URL="http://{{ include "elk.elasticsearch.fullname" . }}:{{ .Values.elasticsearch.service.port }}"
+
+    echo "Waiting for Elasticsearch..."
+
+    until curl -sf "$ES_URL" >/dev/null; do
+      sleep 2
+    done
+
+    echo "Elasticsearch is up!"
+
+    echo "Creating ILM policy..."
+
+    curl -sf -X PUT "$ES_URL/_ilm/policy/bank-logs-policy" \
+    -H "Content-Type: application/json" -d '{
+      "policy": {
+        "phases": {
+          "hot": {
+            "actions": {}
+          }
+        }
+      }
+    }'
+
+    echo "Creating index template..."
+
+    curl -sf -X PUT "$ES_URL/_index_template/bank-logs-template" \
+    -H "Content-Type: application/json" -d '{
+      "index_patterns": ["bank-logs-*"],
+      "template": {
+        "settings": {
+          "number_of_shards": 1,
+          "number_of_replicas": 0,
+          "index.lifecycle.name": "bank-logs-policy"
+        },
+        "mappings": {
+          "properties": {
+            "@timestamp": { "type": "date" },
+            "service_name": { "type": "keyword" },
+            "level": { "type": "keyword" },
+            "traceId": { "type": "keyword" },
+            "spanId": { "type": "keyword" },
+            "message": { "type": "text" },
+            "logger_name": { "type": "keyword" },
+            "thread_name": { "type": "keyword" }
+          }
+        }
+      }
+    }'
+
+    echo "Elasticsearch initialized!"

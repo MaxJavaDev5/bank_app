@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ include "elk.elasticsearch.fullname" . }}-test-connection"
+  labels:
+    {{- include "elk.elasticsearch.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": test
+spec:
+  containers:
+    - name: curl
+      image: curlimages/curl:8.5.0
+      command:
+        - curl
+        - -f
+        - http://{{ include "elk.elasticsearch.fullname" . }}:{{ .Values.elasticsearch.service.port }}/_cluster/health
+  restartPolicy: Never

@@ -67,3 +67,12 @@ grafana:
     type: NodePort
     port: 3000
     nodePort: 30300
+
+elk:
+  enabled: true
+  logstash:
+    service:
+      nodePort: 30500
+  kibana:
+    service:
+      nodePort: 30561
