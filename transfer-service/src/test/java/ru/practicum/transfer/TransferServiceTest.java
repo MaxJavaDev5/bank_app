@@ -49,7 +49,7 @@ class TransferServiceTest {
         assertEquals("user", result.getFromLogin());
         assertEquals("user2", result.getToLogin());
         assertEquals(new BigDecimal("300.00"), result.getAmount());
-        assertEquals(new BigDecimal("700.00"), result.getNewBalanceOfSender());
+        assertEquals(new BigDecimal("700.00"), result.getSenderBalance());
 
         verify(accountsClient, times(1)).transfer("user", "user2", new BigDecimal("300.00"));
         verify(notificationProducer, times(1))

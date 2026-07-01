@@ -75,7 +75,7 @@ class TransferControllerTest {
                 .andExpect(jsonPath("$.fromLogin").value("user"))
                 .andExpect(jsonPath("$.toLogin").value("user2"))
                 .andExpect(jsonPath("$.amount").value(300.00))
-                .andExpect(jsonPath("$.newBalanceOfSender").value(700.00));
+                .andExpect(jsonPath("$.senderBalance").value(700.00));
     }
 
     @Test

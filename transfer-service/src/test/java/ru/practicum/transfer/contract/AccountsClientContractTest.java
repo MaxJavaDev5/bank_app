@@ -36,7 +36,7 @@ class AccountsClientContractTest {
         assertEquals("user", result.getFromLogin());
         assertEquals("user2", result.getToLogin());
         assertEquals(new BigDecimal("300.00"), result.getAmount());
-        assertEquals(new BigDecimal("700.00"), result.getNewBalanceOfSender());
+        assertEquals(new BigDecimal("700.00"), result.getSenderBalance());
     }
 
     @Test
