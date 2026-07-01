@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ include "prometheus.fullname" . }}-test-connection"
+  labels:
+    {{- include "prometheus.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": test
+spec:
+  containers:
+    - name: curl
+      image: curlimages/curl:8.5.0
+      command: ['curl', '-f', 'http://{{ include "prometheus.fullname" . }}:{{ .Values.service.port }}/-/healthy']
+  restartPolicy: Never

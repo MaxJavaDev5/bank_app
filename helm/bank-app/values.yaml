@@ -53,3 +53,10 @@ zipkin:
     type: NodePort
     port: 9411
     nodePort: 30411
+
+prometheus:
+  enabled: true
+  service:
+    type: NodePort
+    port: 9090
+    nodePort: 30090

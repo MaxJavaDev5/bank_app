@@ -1,0 +1,23 @@
+fullnameOverride: prometheus
+
+image:
+  repository: prom/prometheus
+  tag: "v2.54.1"
+  pullPolicy: IfNotPresent
+
+service:
+  type: NodePort
+  port: 9090
+  nodePort: 30090
+
+scrapeInterval: 15s
+
+scrapeTargets:
+  backend:
+    - gateway-service:8080
+    - accounts-service:8081
+    - cash-service:8082
+    - transfer-service:8083
+    - notifications-service:8084
+  front:
+    - host.docker.internal:8085
