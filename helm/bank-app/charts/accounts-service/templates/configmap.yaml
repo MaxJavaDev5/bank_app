@@ -11,3 +11,4 @@ data:
   KEYCLOAK_ISSUER_HOST: {{ .Values.global.keycloak.issuerHost | quote }}
   KEYCLOAK_ISSUER_PORT: {{ .Values.global.keycloak.issuerPort | quote }}
   KAFKA_BOOTSTRAP_SERVERS: {{ .Values.kafka.bootstrapServers | quote }}
+  ZIPKIN_ENDPOINT: "http://zipkin:9411/api/v2/spans"

@@ -177,6 +177,7 @@ services:
       # полный стек в compose: GATEWAY_URL=http://gateway-service:8080
       # гибридный режим (сервисы в K8s): GATEWAY_URL=http://host.docker.internal:30080
       GATEWAY_URL: ${GATEWAY_URL:-http://gateway-service:8080}
+      ZIPKIN_ENDPOINT: http://host.docker.internal:30411/api/v2/spans
     networks:
       - bank-network
     depends_on:

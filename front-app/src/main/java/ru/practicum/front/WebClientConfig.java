@@ -38,12 +38,12 @@ public class WebClientConfig {
     }
 
     @Bean
-    public WebClient gatewayWebClient() {
+    public WebClient gatewayWebClient(WebClient.Builder webClientBuilder) {
         HttpClient httpClient = HttpClient.create()
                 .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, (int) gatewayConnectTimeout.toMillis())
                 .responseTimeout(gatewayTimeout);
 
-        return WebClient.builder()
+        return webClientBuilder
                 .clientConnector(new ReactorClientHttpConnector(httpClient))
                 .baseUrl(gatewayUrl)
                 .filter(addAccessTokenHeader())
