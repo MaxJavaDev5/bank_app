@@ -35,3 +35,7 @@ spec:
                 secretKeyRef:
                   name: {{ include "notifications-service.fullname" . }}-secret
                   key: db-password
+          livenessProbe:
+            {{- toYaml .Values.livenessProbe | nindent 12 }}
+          readinessProbe:
+            {{- toYaml .Values.readinessProbe | nindent 12 }}
