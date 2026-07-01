@@ -17,17 +17,21 @@ import ru.practicum.accounts.kafka.NotificationEvent;
 import ru.practicum.accounts.mapper.AccountMapper;
 import ru.practicum.accounts.model.Account;
 import ru.practicum.accounts.model.AccountNotFoundException;
-import ru.practicum.accounts.model.InsufficientFundsException;
 import ru.practicum.accounts.model.NotificationType;
-import ru.practicum.accounts.model.TransferException;
 import ru.practicum.accounts.repository.AccountRepository;
 import ru.practicum.accounts.service.AccountService;
+import ru.practicum.accounts.service.AccountTransactionService;
 
 import java.math.BigDecimal;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class AccountServiceTest {
@@ -40,6 +44,9 @@ class AccountServiceTest {
 
     @Mock
     private ApplicationEventPublisher eventPublisher;
+
+    @Mock
+    private AccountTransactionService transactionService;
 
     @InjectMocks
     private AccountService accountService;
@@ -77,69 +84,35 @@ class AccountServiceTest {
     }
 
     @Test
-    void shouldDepositMoneyToAccount() {
-        Account account = new Account();
-        account.setLogin("user");
-        account.setBalance(new BigDecimal("1000.00"));
-
-        AccountDto expectedDto = new AccountDto();
-        expectedDto.setBalance(new BigDecimal("1500.00"));
-
+    void shouldDelegateUpdateBalanceToTransactionService() {
         UpdateBalanceDto updateDto = new UpdateBalanceDto();
         updateDto.setAmount(new BigDecimal("500.00"));
         updateDto.setOperationType(UpdateBalanceDto.OperationType.DEPOSIT);
 
-        when(accountRepository.findByLogin("user")).thenReturn(Optional.of(account));
-        when(accountRepository.save(account)).thenReturn(account);
-        when(accountMapper.toAccountDto(account)).thenReturn(expectedDto);
-
-        AccountDto result = accountService.updateBalance("user", updateDto);
-
-        assertEquals(new BigDecimal("1500.00"), account.getBalance());
-        assertNotNull(result);
-        verifyNoInteractions(eventPublisher);
-    }
-
-    @Test
-    void shouldWithdrawMoneyFromAccount() {
-        Account account = new Account();
-        account.setLogin("user");
-        account.setBalance(new BigDecimal("1000.00"));
-
         AccountDto expectedDto = new AccountDto();
-        expectedDto.setBalance(new BigDecimal("700.00"));
+        expectedDto.setBalance(new BigDecimal("1500.00"));
 
-        UpdateBalanceDto updateDto = new UpdateBalanceDto();
-        updateDto.setAmount(new BigDecimal("300.00"));
-        updateDto.setOperationType(UpdateBalanceDto.OperationType.WITHDRAW);
-
-        when(accountRepository.findByLogin("user")).thenReturn(Optional.of(account));
-        when(accountRepository.save(account)).thenReturn(account);
-        when(accountMapper.toAccountDto(account)).thenReturn(expectedDto);
+        when(transactionService.updateBalance("user", updateDto)).thenReturn(expectedDto);
 
         AccountDto result = accountService.updateBalance("user", updateDto);
 
-        assertEquals(new BigDecimal("700.00"), account.getBalance());
-        assertNotNull(result);
-        verifyNoInteractions(eventPublisher);
+        assertEquals(new BigDecimal("1500.00"), result.getBalance());
+        verify(transactionService).updateBalance("user", updateDto);
     }
 
     @Test
-    void shouldThrowErrorWhenNotEnoughMoneyForWithdraw() {
-        Account account = new Account();
-        account.setLogin("user");
-        account.setBalance(new BigDecimal("100.00"));
+    void shouldDelegateTransferToTransactionService() {
+        TransferResponseDto expectedDto = new TransferResponseDto(
+                "user", "user2", new BigDecimal("300.00"), new BigDecimal("700.00"));
 
-        UpdateBalanceDto updateDto = new UpdateBalanceDto();
-        updateDto.setAmount(new BigDecimal("500.00"));
-        updateDto.setOperationType(UpdateBalanceDto.OperationType.WITHDRAW);
+        when(transactionService.transfer("user", "user2", new BigDecimal("300.00")))
+                .thenReturn(expectedDto);
 
-        when(accountRepository.findByLogin("user")).thenReturn(Optional.of(account));
+        TransferResponseDto result = accountService.transfer("user", "user2", new BigDecimal("300.00"));
 
-        assertThrows(InsufficientFundsException.class,
-                () -> accountService.updateBalance("user", updateDto));
-
-        verify(accountRepository, never()).save(any());
+        assertEquals(new BigDecimal("700.00"), result.getSenderBalance());
+        verify(transactionService).transfer("user", "user2", new BigDecimal("300.00"));
+        verifyNoInteractions(eventPublisher);
     }
 
     @Test
@@ -166,84 +139,6 @@ class AccountServiceTest {
     }
 
     @Test
-    void shouldTransferMoneyBetweenAccounts() {
-        Account sender = new Account();
-        sender.setLogin("user");
-        sender.setBalance(new BigDecimal("1000.00"));
-
-        Account receiver = new Account();
-        receiver.setLogin("user2");
-        receiver.setBalance(new BigDecimal("500.00"));
-
-        when(accountRepository.findByLogin("user")).thenReturn(Optional.of(sender));
-        when(accountRepository.findByLogin("user2")).thenReturn(Optional.of(receiver));
-        when(accountRepository.save(any(Account.class))).thenAnswer(invocation -> invocation.getArgument(0));
-
-        TransferResponseDto result = accountService.transfer(
-                "user", "user2", new BigDecimal("300.00"));
-
-        assertEquals(new BigDecimal("700.00"), sender.getBalance());
-        assertEquals(new BigDecimal("800.00"), receiver.getBalance());
-        assertEquals(new BigDecimal("700.00"), result.getSenderBalance());
-        verifyNoInteractions(eventPublisher);
-    }
-
-    @Test
-    void shouldThrowErrorWhenTransferToSelf() {
-        assertThrows(TransferException.class,
-                () -> accountService.transfer("user", "user", new BigDecimal("100.00")));
-
-        verifyNoInteractions(accountRepository);
-    }
-
-    @Test
-    void shouldThrowErrorWhenNotEnoughMoneyOnTransfer() {
-        Account sender = new Account();
-        sender.setLogin("user");
-        sender.setBalance(new BigDecimal("50.00"));
-
-        Account receiver = new Account();
-        receiver.setLogin("user2");
-
-        when(accountRepository.findByLogin("user")).thenReturn(Optional.of(sender));
-        when(accountRepository.findByLogin("user2")).thenReturn(Optional.of(receiver));
-
-        assertThrows(InsufficientFundsException.class,
-                () -> accountService.transfer("user", "user2", new BigDecimal("100.00")));
-
-        verify(accountRepository, never()).save(any());
-    }
-
-    @Test
-    void shouldThrowErrorWhenReceiverNotFoundOnTransfer() {
-        when(accountRepository.findByLogin("unknown")).thenReturn(Optional.empty());
-
-        assertThrows(AccountNotFoundException.class,
-                () -> accountService.transfer("user", "unknown", new BigDecimal("100.00")));
-    }
-
-    @Test
-    void shouldNotSendNotificationWhenTransferFailsOnSave() {
-        Account sender = new Account();
-        sender.setLogin("user");
-        sender.setBalance(new BigDecimal("1000.00"));
-
-        Account receiver = new Account();
-        receiver.setLogin("user2");
-        receiver.setBalance(new BigDecimal("500.00"));
-
-        when(accountRepository.findByLogin("user")).thenReturn(Optional.of(sender));
-        when(accountRepository.findByLogin("user2")).thenReturn(Optional.of(receiver));
-        when(accountRepository.save(sender)).thenReturn(sender);
-        when(accountRepository.save(receiver)).thenThrow(new RuntimeException("save failed"));
-
-        assertThrows(RuntimeException.class,
-                () -> accountService.transfer("user", "user2", new BigDecimal("300.00")));
-
-        verifyNoInteractions(eventPublisher);
-    }
-
-    @Test
     void shouldRetryUpdateBalanceWhenOptimisticLockConflict() {
         UpdateBalanceDto updateDto = new UpdateBalanceDto();
         updateDto.setAmount(new BigDecimal("500.00"));
@@ -252,41 +147,29 @@ class AccountServiceTest {
         AccountDto expectedDto = new AccountDto();
         expectedDto.setBalance(new BigDecimal("1500.00"));
 
-        when(accountRepository.findByLogin("user")).thenAnswer(invocation -> {
-            Account account = new Account();
-            account.setLogin("user");
-            account.setBalance(new BigDecimal("1000.00"));
-            return Optional.of(account);
-        });
-        when(accountRepository.save(any(Account.class)))
+        when(transactionService.updateBalance("user", updateDto))
                 .thenThrow(new OptimisticLockingFailureException("conflict"))
-                .thenAnswer(invocation -> invocation.getArgument(0));
-        when(accountMapper.toAccountDto(any(Account.class))).thenReturn(expectedDto);
+                .thenReturn(expectedDto);
 
         AccountDto result = accountService.updateBalance("user", updateDto);
 
         assertNotNull(result);
         assertEquals(new BigDecimal("1500.00"), result.getBalance());
-        verify(accountRepository, times(2)).save(any(Account.class));
+        verify(transactionService, times(2)).updateBalance("user", updateDto);
     }
 
     @Test
     void shouldThrowWhenOptimisticLockConflictExhaustedOnUpdateBalance() {
-        Account account = new Account();
-        account.setLogin("user");
-        account.setBalance(new BigDecimal("1000.00"));
-
         UpdateBalanceDto updateDto = new UpdateBalanceDto();
         updateDto.setAmount(new BigDecimal("500.00"));
         updateDto.setOperationType(UpdateBalanceDto.OperationType.DEPOSIT);
 
-        when(accountRepository.findByLogin("user")).thenReturn(Optional.of(account));
-        when(accountRepository.save(account))
+        when(transactionService.updateBalance("user", updateDto))
                 .thenThrow(new OptimisticLockingFailureException("conflict"));
 
         assertThrows(OptimisticLockingFailureException.class,
                 () -> accountService.updateBalance("user", updateDto));
 
-        verify(accountRepository, times(3)).save(account);
+        verify(transactionService, times(3)).updateBalance("user", updateDto);
     }
 }

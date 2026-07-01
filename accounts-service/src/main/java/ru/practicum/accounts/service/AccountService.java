@@ -2,7 +2,6 @@ package ru.practicum.accounts.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.OptimisticLockingFailureException;
@@ -17,9 +16,7 @@ import ru.practicum.accounts.kafka.NotificationEvent;
 import ru.practicum.accounts.mapper.AccountMapper;
 import ru.practicum.accounts.model.Account;
 import ru.practicum.accounts.model.AccountNotFoundException;
-import ru.practicum.accounts.model.InsufficientFundsException;
 import ru.practicum.accounts.model.NotificationType;
-import ru.practicum.accounts.model.TransferException;
 import ru.practicum.accounts.repository.AccountRepository;
 
 import java.math.BigDecimal;
@@ -34,12 +31,11 @@ public class AccountService {
     private final AccountRepository accountRepository;
     private final AccountMapper accountMapper;
     private final ApplicationEventPublisher eventPublisher;
-    private final ObjectProvider<AccountService> selfProvider;
+    private final AccountTransactionService transactionService;
 
     @Value("${accounts.retry.max-attempts:3}")
     private int maxAttempts;
 
-    // возращает аккаунт по логину
     @Transactional(readOnly = true)
     public AccountDto getAccountByLogin(String login) {
         Account account = findAccountOrThrow(login);
@@ -63,61 +59,11 @@ public class AccountService {
     }
 
     public AccountDto updateBalance(String login, UpdateBalanceDto updateBalanceDto) {
-        return runWithRetry(() -> self().updateBalanceTx(login, updateBalanceDto));
-    }
-
-    @Transactional
-    public AccountDto updateBalanceTx(String login, UpdateBalanceDto updateBalanceDto) {
-        Account account = findAccountOrThrow(login);
-        BigDecimal amount = updateBalanceDto.getAmount();
-
-        if (updateBalanceDto.getOperationType() == UpdateBalanceDto.OperationType.DEPOSIT) {
-            account.setBalance(account.getBalance().add(amount));
-        } else {  // WITHDRAW
-            if (account.getBalance().compareTo(amount) < 0) {
-                throw new InsufficientFundsException(login, account.getBalance(), amount);
-            }
-            account.setBalance(account.getBalance().subtract(amount));
-        }
-
-        Account savedAccount = accountRepository.save(account);
-        return accountMapper.toAccountDto(savedAccount);
+        return runWithRetry(() -> transactionService.updateBalance(login, updateBalanceDto));
     }
 
     public TransferResponseDto transfer(String fromLogin, String toLogin, BigDecimal amount) {
-        return runWithRetry(() -> self().transferTx(fromLogin, toLogin, amount));
-    }
-
-    @Transactional
-    public TransferResponseDto transferTx(String fromLogin, String toLogin, BigDecimal amount) {
-        if (fromLogin.equals(toLogin)) {
-            throw new TransferException("Нельзя переводить деньги самому себе");
-        }
-
-        Account first;
-        Account second;
-        if (fromLogin.compareTo(toLogin) < 0) {
-            first = findAccountOrThrow(fromLogin);
-            second = findAccountOrThrow(toLogin);
-        } else {
-            first = findAccountOrThrow(toLogin);
-            second = findAccountOrThrow(fromLogin);
-        }
-
-        Account sender = fromLogin.equals(first.getLogin()) ? first : second;
-        Account receiver = fromLogin.equals(first.getLogin()) ? second : first;
-
-        if (sender.getBalance().compareTo(amount) < 0) {
-            throw new InsufficientFundsException(fromLogin, sender.getBalance(), amount);
-        }
-
-        sender.setBalance(sender.getBalance().subtract(amount));
-        receiver.setBalance(receiver.getBalance().add(amount));
-
-        accountRepository.save(sender);
-        accountRepository.save(receiver);
-
-        return new TransferResponseDto(fromLogin, toLogin, amount, sender.getBalance());
+        return runWithRetry(() -> transactionService.transfer(fromLogin, toLogin, amount));
     }
 
     private Account findAccountOrThrow(String login) {
@@ -125,11 +71,6 @@ public class AccountService {
                 .orElseThrow(() -> new AccountNotFoundException(login));
     }
 
-    private AccountService self() {
-        return selfProvider != null ? selfProvider.getObject() : this;
-    }
-
-    // повторяем операцию при конкурентном конфликте версий
     private <T> T runWithRetry(Supplier<T> action) {
         int attempt = 1;
         while (true) {
