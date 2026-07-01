@@ -62,3 +62,6 @@ management:
   endpoint:
     health:
       show-details: always
+logstash:
+  host: ${LOGSTASH_HOST:logstash}
+  port: ${LOGSTASH_PORT:5000}

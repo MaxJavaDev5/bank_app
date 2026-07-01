@@ -61,3 +61,6 @@ management:
       enabled: true
     readinessState:
       enabled: true
+logstash:
+  host: ${LOGSTASH_HOST:logstash}
+  port: ${LOGSTASH_PORT:5000}
