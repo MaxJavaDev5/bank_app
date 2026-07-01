@@ -6,13 +6,14 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.test.util.ReflectionTestUtils;
 import ru.practicum.accounts.dto.AccountDto;
 import ru.practicum.accounts.dto.TransferResponseDto;
 import ru.practicum.accounts.dto.UpdateAccountDto;
 import ru.practicum.accounts.dto.UpdateBalanceDto;
-import ru.practicum.accounts.kafka.NotificationProducer;
+import ru.practicum.accounts.kafka.NotificationEvent;
 import ru.practicum.accounts.mapper.AccountMapper;
 import ru.practicum.accounts.model.Account;
 import ru.practicum.accounts.model.AccountNotFoundException;
@@ -38,7 +39,7 @@ class AccountServiceTest {
     private AccountMapper accountMapper;
 
     @Mock
-    private NotificationProducer notificationProducer;
+    private ApplicationEventPublisher eventPublisher;
 
     @InjectMocks
     private AccountService accountService;
@@ -96,7 +97,7 @@ class AccountServiceTest {
 
         assertEquals(new BigDecimal("1500.00"), account.getBalance());
         assertNotNull(result);
-        verify(notificationProducer, never()).send(anyString(), anyString(), any());
+        verifyNoInteractions(eventPublisher);
     }
 
     @Test
@@ -120,7 +121,7 @@ class AccountServiceTest {
 
         assertEquals(new BigDecimal("700.00"), account.getBalance());
         assertNotNull(result);
-        verify(notificationProducer, never()).send(anyString(), anyString(), any());
+        verifyNoInteractions(eventPublisher);
     }
 
     @Test
@@ -142,7 +143,7 @@ class AccountServiceTest {
     }
 
     @Test
-    void shouldSendNotificationWhenAccountUpdated() {
+    void shouldPublishNotificationEventWhenAccountUpdated() {
         Account account = new Account();
         account.setLogin("user");
 
@@ -160,8 +161,8 @@ class AccountServiceTest {
 
         accountService.updateAccount("user", updateDto);
 
-        verify(notificationProducer, times(1))
-                .send(eq("user"), anyString(), eq(NotificationType.PROFILE_UPDATE));
+        verify(eventPublisher).publishEvent(new NotificationEvent(
+                "user", "Ваш профиль успешно обновлён", NotificationType.PROFILE_UPDATE));
     }
 
     @Test
@@ -184,7 +185,7 @@ class AccountServiceTest {
         assertEquals(new BigDecimal("700.00"), sender.getBalance());
         assertEquals(new BigDecimal("800.00"), receiver.getBalance());
         assertEquals(new BigDecimal("700.00"), result.getSenderBalance());
-        verify(notificationProducer, never()).send(anyString(), anyString(), any());
+        verifyNoInteractions(eventPublisher);
     }
 
     @Test
@@ -239,7 +240,7 @@ class AccountServiceTest {
         assertThrows(RuntimeException.class,
                 () -> accountService.transfer("user", "user2", new BigDecimal("300.00")));
 
-        verify(notificationProducer, never()).send(anyString(), anyString(), any());
+        verifyNoInteractions(eventPublisher);
     }
 
     @Test

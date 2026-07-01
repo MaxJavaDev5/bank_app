@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -12,7 +13,7 @@ import ru.practicum.accounts.dto.AccountShortDto;
 import ru.practicum.accounts.dto.TransferResponseDto;
 import ru.practicum.accounts.dto.UpdateAccountDto;
 import ru.practicum.accounts.dto.UpdateBalanceDto;
-import ru.practicum.accounts.kafka.NotificationProducer;
+import ru.practicum.accounts.kafka.NotificationEvent;
 import ru.practicum.accounts.mapper.AccountMapper;
 import ru.practicum.accounts.model.Account;
 import ru.practicum.accounts.model.AccountNotFoundException;
@@ -32,7 +33,7 @@ public class AccountService {
 
     private final AccountRepository accountRepository;
     private final AccountMapper accountMapper;
-    private final NotificationProducer notificationProducer;
+    private final ApplicationEventPublisher eventPublisher;
     private final ObjectProvider<AccountService> selfProvider;
 
     @Value("${accounts.retry.max-attempts:3}")
@@ -50,7 +51,8 @@ public class AccountService {
         Account account = findAccountOrThrow(login);
         accountMapper.updateAccountFromDto(updateDto, account);
         Account savedAccount = accountRepository.save(account);
-        notificationProducer.send(login, "Ваш профиль успешно обновлён", NotificationType.PROFILE_UPDATE);
+        eventPublisher.publishEvent(new NotificationEvent(
+                login, "Ваш профиль успешно обновлён", NotificationType.PROFILE_UPDATE));
         return accountMapper.toAccountDto(savedAccount);
     }
 
