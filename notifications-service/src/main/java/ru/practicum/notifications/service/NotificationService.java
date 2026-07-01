@@ -20,6 +20,10 @@ public class NotificationService {
 
     @Transactional
     public boolean createNotification(NotificationRequestDto request) {
+        if (request.getEventId() == null || request.getEventId().isBlank()) {
+            throw new IllegalArgumentException("eventId is required for deduplication");
+        }
+
         if (notificationRepository.findByEventId(request.getEventId()).isPresent()) {
             return false;
         }

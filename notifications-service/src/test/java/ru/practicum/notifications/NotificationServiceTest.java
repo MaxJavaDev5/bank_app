@@ -69,6 +69,18 @@ class NotificationServiceTest {
     }
 
     @Test
+    void shouldThrowWhenEventIdIsBlank() {
+        NotificationRequestDto request = request();
+        request.setEventId("  ");
+
+        assertThrows(IllegalArgumentException.class,
+                () -> notificationService.createNotification(request));
+
+        verify(notificationRepository, never()).findByEventId(any());
+        verify(notificationRepository, never()).save(any());
+    }
+
+    @Test
     void shouldSkipWhenSaveFailsDueToRaceCondition() {
         NotificationRequestDto request = request();
         Notification newNotification = new Notification();

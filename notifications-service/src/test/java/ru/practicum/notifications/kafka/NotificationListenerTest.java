@@ -17,7 +17,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest
-@EmbeddedKafka(partitions = 1, topics = KafkaTopicsConfig.NOTIFICATIONS_TOPIC)
+@EmbeddedKafka(partitions = 1, topics = {
+        KafkaTopicsConfig.NOTIFICATIONS_TOPIC,
+        KafkaTopicsConfig.NOTIFICATIONS_DLT_TOPIC
+})
 class NotificationListenerTest {
 
     @Autowired
@@ -63,5 +66,18 @@ class NotificationListenerTest {
         assertEquals(1, notificationRepository.findAll().stream()
                 .filter(n -> eventId.equals(n.getEventId()))
                 .count());
+    }
+
+    @Test
+    void shouldRejectMessageWithoutEventId() {
+        NotificationRequestDto request = new NotificationRequestDto();
+        request.setLogin("user");
+        request.setMessage("Пополнение без eventId");
+        request.setType(Notification.NotificationType.DEPOSIT);
+
+        kafkaTemplate.send(KafkaTopicsConfig.NOTIFICATIONS_TOPIC, request.getLogin(), request);
+
+        await().during(Duration.ofSeconds(3)).untilAsserted(() ->
+                assertTrue(notificationRepository.findAll().isEmpty()));
     }
 }
