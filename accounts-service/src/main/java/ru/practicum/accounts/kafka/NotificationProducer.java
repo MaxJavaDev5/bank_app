@@ -22,7 +22,17 @@ public class NotificationProducer {
     public void send(String login, String message, NotificationType type) {
         String eventId = UUID.randomUUID().toString();
         NotificationMessage payload = new NotificationMessage(eventId, login, message, type);
-        kafkaTemplate.send(TOPIC, login, payload);
-        log.info("Отправили уведомление в Kafka: login={}, type={}, eventId={}", login, type, eventId);
+        kafkaTemplate.send(TOPIC, login, payload)
+                .whenComplete((result, ex) -> {
+                    if (ex != null) {
+                        log.error("Не удалось отправить уведомление в Kafka: login={}, type={}, eventId={}",
+                                login, type, eventId, ex);
+                    } else {
+                        log.info("Уведомление доставлено в Kafka: login={}, type={}, eventId={}, partition={}, offset={}",
+                                login, type, eventId,
+                                result.getRecordMetadata().partition(),
+                                result.getRecordMetadata().offset());
+                    }
+                });
     }
 }
