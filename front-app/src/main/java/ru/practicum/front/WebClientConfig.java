@@ -15,6 +15,7 @@ import org.springframework.web.reactive.function.client.ClientRequest;
 import org.springframework.web.reactive.function.client.ExchangeFilterFunction;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.netty.http.client.HttpClient;
+import ru.practicum.front.client.WebClientErrorHandler;
 
 import java.time.Duration;
 
@@ -46,6 +47,7 @@ public class WebClientConfig {
                 .clientConnector(new ReactorClientHttpConnector(httpClient))
                 .baseUrl(gatewayUrl)
                 .filter(addAccessTokenHeader())
+                .filter(WebClientErrorHandler.remoteErrorFilter("gateway"))
                 .build();
     }
 
