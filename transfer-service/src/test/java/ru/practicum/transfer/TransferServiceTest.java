@@ -1,5 +1,8 @@
 package ru.practicum.transfer;
 
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -18,6 +21,7 @@ import java.math.BigDecimal;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.lenient;
 
 @ExtendWith(MockitoExtension.class)
 class TransferServiceTest {
@@ -28,8 +32,20 @@ class TransferServiceTest {
     @Mock
     private NotificationProducer notificationProducer;
 
+    @Mock
+    private MeterRegistry meterRegistry;
+
+    @Mock
+    private Counter counter;
+
     @InjectMocks
     private TransferService transferService;
+
+    @BeforeEach
+    void setUpMeterRegistry() {
+        lenient().when(meterRegistry.counter(
+                anyString(), anyString(), anyString(), anyString(), anyString())).thenReturn(counter);
+    }
 
     @Test
     void shouldTransferMoneyBetweenAccounts() {
