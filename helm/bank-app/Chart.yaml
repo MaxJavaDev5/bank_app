@@ -34,3 +34,7 @@ dependencies:
     version: "0.1.0"
     repository: "file://charts/gateway-service"
     condition: gateway-service.enabled
+  - name: zipkin
+    version: "0.1.0"
+    repository: "file://charts/zipkin"
+    condition: zipkin.enabled

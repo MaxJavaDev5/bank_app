@@ -46,3 +46,10 @@ gateway-service:
     type: NodePort
     port: 8080
     nodePort: 30080
+
+zipkin:
+  enabled: true
+  service:
+    type: NodePort
+    port: 9411
+    nodePort: 30411
