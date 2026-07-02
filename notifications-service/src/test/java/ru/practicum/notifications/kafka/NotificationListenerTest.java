@@ -1,5 +1,6 @@
 package ru.practicum.notifications.kafka;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -21,13 +22,18 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
         KafkaTopicsConfig.NOTIFICATIONS_TOPIC,
         KafkaTopicsConfig.NOTIFICATIONS_DLT_TOPIC
 })
-class NotificationListenerTest {
+class NotificationListenerTest extends KafkaDltTestSupport {
 
     @Autowired
     private KafkaTemplate<String, Object> kafkaTemplate;
 
     @Autowired
     private NotificationRepository notificationRepository;
+
+    @BeforeEach
+    void cleanRepository() {
+        notificationRepository.deleteAll();
+    }
 
     @Test
     void shouldConsumeMessageAndSaveNotification() {
@@ -77,7 +83,11 @@ class NotificationListenerTest {
 
         kafkaTemplate.send(KafkaTopicsConfig.NOTIFICATIONS_TOPIC, request.getLogin(), request);
 
+        assertDltRecord(
+                awaitDltRecord(Duration.ofSeconds(15)), "user", "Пополнение без eventId");
+
         await().during(Duration.ofSeconds(3)).untilAsserted(() ->
-                assertTrue(notificationRepository.findAll().isEmpty()));
+                assertTrue(notificationRepository.findAll().stream()
+                        .noneMatch(notification -> "user".equals(notification.getLogin()))));
     }
 }
