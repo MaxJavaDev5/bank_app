@@ -6,7 +6,4 @@ metadata:
     {{- include "notifications-service.labels" . | nindent 4 }}
 data:
   DB_HOST: {{ .Values.db.host | quote }}
-  KEYCLOAK_INTERNAL_HOST: {{ .Values.global.keycloak.internalHost | quote }}
-  KEYCLOAK_INTERNAL_PORT: {{ .Values.global.keycloak.internalPort | quote }}
-  KEYCLOAK_ISSUER_HOST: {{ .Values.global.keycloak.issuerHost | quote }}
-  KEYCLOAK_ISSUER_PORT: {{ .Values.global.keycloak.issuerPort | quote }}
+  KAFKA_BOOTSTRAP_SERVERS: {{ .Values.kafka.bootstrapServers | quote }}

@@ -28,8 +28,8 @@ public class Notification {
     @Column(name = "type", nullable = false)
     private NotificationType type;
 
-    @Column(name = "event_id", unique = true)
-    private Long eventId;
+    @Column(name = "event_id", nullable = false, unique = true)
+    private String eventId;
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt = LocalDateTime.now();

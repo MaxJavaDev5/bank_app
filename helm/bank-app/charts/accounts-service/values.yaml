@@ -17,8 +17,8 @@ db:
   user: postgres
   password: postgres
 
-oauth:
-  clientSecret: accounts-secret
+kafka:
+  bootstrapServers: kafka:9092
 
 livenessProbe:
   httpGet:

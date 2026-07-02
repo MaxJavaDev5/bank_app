@@ -1,12 +1,9 @@
 package ru.practicum.front.client;
 
-import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Mono;
 import ru.practicum.front.dto.AccountDto;
 import ru.practicum.front.dto.AccountShortDto;
-import ru.practicum.front.model.RemoteException;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -26,10 +23,6 @@ public class BankClient {
         return gatewayWebClient.get()
                 .uri("/api/accounts/me")
                 .retrieve()
-                .onStatus(HttpStatusCode::isError, response ->
-                        response.bodyToMono(String.class)
-                                .flatMap(body -> Mono.error(new RemoteException("gateway", body)))
-                )
                 .bodyToMono(AccountDto.class)
                 .block();
     }
@@ -43,10 +36,6 @@ public class BankClient {
                         "birthDate", birthDate != null ? birthDate.toString() : ""
                 ))
                 .retrieve()
-                .onStatus(HttpStatusCode::isError, response ->
-                        response.bodyToMono(String.class)
-                                .flatMap(body -> Mono.error(new RemoteException("gateway", body)))
-                )
                 .bodyToMono(AccountDto.class)
                 .block();
     }
@@ -65,10 +54,6 @@ public class BankClient {
                 .uri("/api/cash/deposit")
                 .bodyValue(Map.of("amount", amount))
                 .retrieve()
-                .onStatus(HttpStatusCode::isError, response ->
-                        response.bodyToMono(String.class)
-                                .flatMap(body -> Mono.error(new RemoteException("gateway", body)))
-                )
                 .bodyToMono(AccountDto.class)
                 .block();
     }
@@ -78,10 +63,6 @@ public class BankClient {
                 .uri("/api/cash/withdraw")
                 .bodyValue(Map.of("amount", amount))
                 .retrieve()
-                .onStatus(HttpStatusCode::isError, response ->
-                        response.bodyToMono(String.class)
-                                .flatMap(body -> Mono.error(new RemoteException("gateway", body)))
-                )
                 .bodyToMono(AccountDto.class)
                 .block();
     }
@@ -94,10 +75,6 @@ public class BankClient {
                         "amount", amount
                 ))
                 .retrieve()
-                .onStatus(HttpStatusCode::isError, response ->
-                        response.bodyToMono(String.class)
-                                .flatMap(body -> Mono.error(new RemoteException("gateway", body)))
-                )
                 .bodyToMono(Void.class)
                 .block();
     }

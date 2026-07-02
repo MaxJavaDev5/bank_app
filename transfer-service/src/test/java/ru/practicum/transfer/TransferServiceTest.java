@@ -8,6 +8,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import ru.practicum.transfer.client.AccountsClient;
 import ru.practicum.transfer.dto.TransferDto;
 import ru.practicum.transfer.dto.TransferResponseDto;
+import ru.practicum.transfer.kafka.NotificationProducer;
+import ru.practicum.transfer.model.NotificationType;
 import ru.practicum.transfer.model.RemoteException;
 import ru.practicum.transfer.model.TransferException;
 import ru.practicum.transfer.service.TransferService;
@@ -22,6 +24,9 @@ class TransferServiceTest {
 
     @Mock
     private AccountsClient accountsClient;
+
+    @Mock
+    private NotificationProducer notificationProducer;
 
     @InjectMocks
     private TransferService transferService;
@@ -44,9 +49,13 @@ class TransferServiceTest {
         assertEquals("user", result.getFromLogin());
         assertEquals("user2", result.getToLogin());
         assertEquals(new BigDecimal("300.00"), result.getAmount());
-        assertEquals(new BigDecimal("700.00"), result.getNewBalanceOfSender());
+        assertEquals(new BigDecimal("700.00"), result.getSenderBalance());
 
         verify(accountsClient, times(1)).transfer("user", "user2", new BigDecimal("300.00"));
+        verify(notificationProducer, times(1))
+                .send(eq("user"), anyString(), eq(NotificationType.TRANSFER_OUT));
+        verify(notificationProducer, times(1))
+                .send(eq("user2"), anyString(), eq(NotificationType.TRANSFER_IN));
     }
 
     @Test
@@ -59,6 +68,7 @@ class TransferServiceTest {
                 () -> transferService.transfer("user", transferDto));
 
         verifyNoInteractions(accountsClient);
+        verifyNoInteractions(notificationProducer);
     }
 
     @Test
@@ -74,5 +84,6 @@ class TransferServiceTest {
                 () -> transferService.transfer("user", transferDto));
 
         verify(accountsClient, times(1)).transfer("user", "user2", new BigDecimal("99999.00"));
+        verify(notificationProducer, never()).send(anyString(), anyString(), any());
     }
 }

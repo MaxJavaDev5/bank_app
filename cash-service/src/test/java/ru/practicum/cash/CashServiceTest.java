@@ -8,6 +8,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import ru.practicum.cash.client.AccountsClient;
 import ru.practicum.cash.dto.AccountDto;
 import ru.practicum.cash.dto.CashOperationDto;
+import ru.practicum.cash.kafka.NotificationProducer;
+import ru.practicum.cash.model.NotificationType;
 import ru.practicum.cash.model.RemoteException;
 import ru.practicum.cash.service.CashService;
 
@@ -21,6 +23,9 @@ class CashServiceTest {
 
     @Mock
     private AccountsClient accountsClient;
+
+    @Mock
+    private NotificationProducer notificationProducer;
 
     @InjectMocks
     private CashService cashService;
@@ -42,6 +47,8 @@ class CashServiceTest {
         assertNotNull(result);
         assertEquals(new BigDecimal("1500.00"), result.getBalance());
         verify(accountsClient, times(1)).deposit("user", new BigDecimal("500.00"));
+        verify(notificationProducer, times(1))
+                .send(eq("user"), anyString(), eq(NotificationType.DEPOSIT));
     }
 
     @Test
@@ -60,6 +67,8 @@ class CashServiceTest {
 
         assertNotNull(result);
         assertEquals(new BigDecimal("800.00"), result.getBalance());
+        verify(notificationProducer, times(1))
+                .send(eq("user"), anyString(), eq(NotificationType.WITHDRAW));
     }
 
     @Test
@@ -72,5 +81,7 @@ class CashServiceTest {
 
         assertThrows(RemoteException.class,
                 () -> cashService.withdraw("user", operationDto));
+
+        verify(notificationProducer, never()).send(anyString(), anyString(), any());
     }
 }

@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.fullnameOverride }}
+  labels:
+    app: {{ .Values.fullnameOverride }}
+spec:
+  clusterIP: None
+  # нужно, чтобы DNS-имя kafka-0.kafka резолвилось до того, как брокер станет Ready
+  # (иначе брокер не может подключиться к собственному controller при старте)
+  publishNotReadyAddresses: true
+  selector:
+    app: {{ .Values.fullnameOverride }}
+  ports:
+    - name: client
+      port: 9092
+      targetPort: 9092
+    - name: controller
+      port: 9093
+      targetPort: 9093

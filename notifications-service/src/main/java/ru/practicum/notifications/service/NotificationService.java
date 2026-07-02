@@ -6,13 +6,9 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.notifications.dto.NotificationRequestDto;
-import ru.practicum.notifications.dto.NotificationDto;
 import ru.practicum.notifications.mapper.NotificationMapper;
 import ru.practicum.notifications.model.Notification;
 import ru.practicum.notifications.repository.NotificationRepository;
-
-import java.util.List;
-import java.util.Optional;
 
 @Slf4j
 @Service
@@ -22,34 +18,24 @@ public class NotificationService {
     private final NotificationRepository notificationRepository;
     private final NotificationMapper notificationMapper;
 
-    public NotificationCreationResult createNotification(NotificationRequestDto request) {
-        Optional<Notification> existing = notificationRepository.findByEventId(request.getEventId());
-        if (existing.isPresent()) {
-            return new NotificationCreationResult(
-                    notificationMapper.toNotificationDto(existing.get()), false);
+    @Transactional
+    public boolean createNotification(NotificationRequestDto request) {
+        if (request.getEventId() == null || request.getEventId().isBlank()) {
+            throw new IllegalArgumentException("eventId is required for deduplication");
+        }
+
+        if (notificationRepository.findByEventId(request.getEventId()).isPresent()) {
+            return false;
         }
 
         try {
             Notification notification = notificationMapper.toNotification(request);
-            Notification saved = notificationRepository.save(notification);
+            notificationRepository.save(notification);
             log.info("уведомление для {}: {}", request.getLogin(), request.getMessage());
-            return new NotificationCreationResult(
-                    notificationMapper.toNotificationDto(saved), true);
+            return true;
         } catch (DataIntegrityViolationException ex) {
-            // параллельный поток уже сохранил это событие — перечитываем и отдаём существующее
-            Notification saved = notificationRepository.findByEventId(request.getEventId())
-                    .orElseThrow(() -> ex);
-            return new NotificationCreationResult(
-                    notificationMapper.toNotificationDto(saved), false);
+            // параллельно это событие уже сохранили — считаем дублем
+            return false;
         }
-    }
-
-    @Transactional(readOnly = true)
-    public List<NotificationDto> getNotificationsByLogin(String login) {
-        List<Notification> notifications = notificationRepository.findByLoginOrderByCreatedAtDesc(login);
-        return notificationMapper.toNotificationDtoList(notifications);
-    }
-
-    public record NotificationCreationResult(NotificationDto notification, boolean created) {
     }
 }
