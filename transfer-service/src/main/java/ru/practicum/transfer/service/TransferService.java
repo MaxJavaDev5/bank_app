@@ -34,12 +34,11 @@ public class TransferService {
         log.info("Запрос перевода: from={}, to={}, amount={}",
                 fromLogin, toLogin, transferDto.getAmount());
 
-        try {
-            // нельзя переводить самому себе
-            if (fromLogin.equals(toLogin)) {
-                throw new TransferException("Нельзя переводить деньги самому себе");
-            }
+        if (fromLogin.equals(toLogin)) {
+            throw new TransferException("Нельзя переводить деньги самому себе");
+        }
 
+        try {
             TransferResponseDto result = accountsClient.transfer(
                     fromLogin, toLogin, transferDto.getAmount());
 
@@ -51,6 +50,9 @@ public class TransferService {
             notificationProducer.send(toLogin,
                     "Поступил перевод " + transferDto.getAmount() + " от " + fromLogin,
                     NotificationType.TRANSFER_IN);
+
+            meterRegistry.counter("bank_transfer_total",
+                    "from_login", fromLogin, "to_login", toLogin).increment();
 
             return result;
         } catch (Exception ex) {

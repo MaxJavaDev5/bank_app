@@ -72,6 +72,9 @@ class TransferServiceTest {
                 .send(eq("user"), anyString(), eq(NotificationType.TRANSFER_OUT));
         verify(notificationProducer, times(1))
                 .send(eq("user2"), anyString(), eq(NotificationType.TRANSFER_IN));
+        verify(meterRegistry).counter("bank_transfer_total",
+                "from_login", "user", "to_login", "user2");
+        verify(counter).increment();
     }
 
     @Test
@@ -85,6 +88,8 @@ class TransferServiceTest {
 
         verifyNoInteractions(accountsClient);
         verifyNoInteractions(notificationProducer);
+        verify(meterRegistry, never()).counter(anyString(), any(), any(), any(), any());
+        verify(counter, never()).increment();
     }
 
     @Test
@@ -99,6 +104,9 @@ class TransferServiceTest {
         assertThrows(RemoteException.class,
                 () -> transferService.transfer("user", transferDto));
 
+        verify(meterRegistry).counter("bank_transfer_failed_total",
+                "from_login", "user", "to_login", "user2");
+        verify(counter).increment();
         verify(accountsClient, times(1)).transfer("user", "user2", new BigDecimal("99999.00"));
         verify(notificationProducer, never()).send(anyString(), anyString(), any());
     }

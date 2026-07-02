@@ -1,4 +1,6 @@
 spring:
+  profiles:
+    active: logback-test
   security:
     oauth2:
       resourceserver:

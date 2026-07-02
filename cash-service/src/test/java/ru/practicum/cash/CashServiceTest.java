@@ -97,6 +97,8 @@ class CashServiceTest {
         assertThrows(RemoteException.class,
                 () -> cashService.withdraw("user", operationDto));
 
+        verify(meterRegistry).counter("bank_withdraw_failed_total", "login", "user");
+        verify(counter).increment();
         verify(notificationProducer, never()).send(anyString(), anyString(), any());
     }
 }

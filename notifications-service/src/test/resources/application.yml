@@ -1,4 +1,6 @@
 spring:
+  profiles:
+    active: logback-test
   flyway:
     enabled: false
   datasource:
