@@ -142,8 +142,6 @@ services:
     depends_on:
       accounts-service:
         condition: service_started
-      notifications-service:
-        condition: service_started
       kafka:
         condition: service_healthy
   transfer-service:
@@ -159,8 +157,6 @@ services:
       - bank-network
     depends_on:
       accounts-service:
-        condition: service_started
-      notifications-service:
         condition: service_started
       kafka:
         condition: service_healthy

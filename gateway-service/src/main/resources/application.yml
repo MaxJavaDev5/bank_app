@@ -28,13 +28,6 @@
           filters:
             - StripPrefix=1
             - name: JwtTokenRelay
-        - id: notificationsRoute
-          uri: http://notifications-service:8084
-          predicates:
-            - Path=/api/notifications/**
-          filters:
-            - StripPrefix=1
-            - name: JwtTokenRelay
   security:
     oauth2:
       resourceserver:

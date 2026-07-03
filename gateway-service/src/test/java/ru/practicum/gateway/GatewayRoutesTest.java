@@ -37,8 +37,7 @@ class GatewayRoutesTest {
                     .containsExactlyInAnyOrder(
                             "accountsRoute",
                             "cashRoute",
-                            "transferRoute",
-                            "notificationsRoute"
+                            "transferRoute"
                     );
         });
 

@@ -5,13 +5,13 @@
     oauth2:
       client:
         registration:
-          transfer-client:
+          transferclient:
             client-id: transfer-service
             client-secret: transfer-secret
             authorization-grant-type: client_credentials
             scope: openid
         provider:
-          transfer-client:
+          transferclient:
             token-uri: http://${KEYCLOAK_INTERNAL_HOST:localhost}:${KEYCLOAK_INTERNAL_PORT:8180}/realms/bank-realm/protocol/openid-connect/token
       resourceserver:
         jwt:

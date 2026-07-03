@@ -29,7 +29,7 @@ public class WebClientConfig {
                                        OAuth2AuthorizedClientManager authorizedClientManager) {
         ServletOAuth2AuthorizedClientExchangeFilterFunction oauth2 =
                 new ServletOAuth2AuthorizedClientExchangeFilterFunction(authorizedClientManager);
-        oauth2.setDefaultClientRegistrationId("cash-client");
+        oauth2.setDefaultClientRegistrationId("cashclient");
 
         HttpClient httpClient = HttpClient.create()
                 .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, (int) accountsServiceConnectTimeout.toMillis())
