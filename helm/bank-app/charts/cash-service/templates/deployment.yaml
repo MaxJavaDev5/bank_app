@@ -25,7 +25,7 @@ spec:
             - configMapRef:
                 name: {{ include "cash-service.fullname" . }}-config
           env:
-            - name: SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_CASHCLIENT_CLIENT_SECRET
+            - name: "SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_CASHCLIENT_CLIENT_SECRET"
               valueFrom:
                 secretKeyRef:
                   name: {{ include "cash-service.fullname" . }}-secret

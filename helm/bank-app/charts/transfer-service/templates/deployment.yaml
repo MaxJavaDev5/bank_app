@@ -25,7 +25,7 @@ spec:
             - configMapRef:
                 name: {{ include "transfer-service.fullname" . }}-config
           env:
-            - name: SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_TRANSFERCLIENT_CLIENT_SECRET
+            - name: "SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_TRANSFERCLIENT_CLIENT_SECRET"
               valueFrom:
                 secretKeyRef:
                   name: {{ include "transfer-service.fullname" . }}-secret
