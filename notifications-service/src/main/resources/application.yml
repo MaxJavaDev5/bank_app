@@ -20,6 +20,10 @@
         default_schema: notifications
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    template:
+      observation-enabled: true
+    listener:
+      observation-enabled: true
     consumer:
       group-id: notifications-service
       auto-offset-reset: earliest
@@ -34,7 +38,19 @@ management:
   endpoints:
     web:
       exposure:
-        include: health, info
+        include: health,info,prometheus
+  zipkin:
+    tracing:
+      endpoint: ${ZIPKIN_ENDPOINT:http://zipkin:9411/api/v2/spans}
+  tracing:
+    sampling:
+      probability: 1.0
+  metrics:
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+      percentiles:
+        http.server.requests: 0.5,0.95,0.99
   endpoint:
     health:
       probes:
@@ -45,3 +61,6 @@ management:
       enabled: true
     readinessState:
       enabled: true
+logstash:
+  host: ${LOGSTASH_HOST:logstash}
+  port: ${LOGSTASH_PORT:5000}

@@ -1,0 +1,18 @@
+fullnameOverride: grafana
+
+image:
+  repository: grafana/grafana
+  tag: "10.4.2"
+  pullPolicy: IfNotPresent
+
+admin:
+  user: admin
+  password: admin
+
+service:
+  type: NodePort
+  port: 3000
+  nodePort: 30300
+
+prometheus:
+  url: http://prometheus:9090

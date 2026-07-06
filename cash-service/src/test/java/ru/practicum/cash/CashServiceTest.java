@@ -1,5 +1,8 @@
 package ru.practicum.cash;
 
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -17,6 +20,7 @@ import java.math.BigDecimal;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.lenient;
 
 @ExtendWith(MockitoExtension.class)
 class CashServiceTest {
@@ -27,8 +31,19 @@ class CashServiceTest {
     @Mock
     private NotificationProducer notificationProducer;
 
+    @Mock
+    private MeterRegistry meterRegistry;
+
+    @Mock
+    private Counter counter;
+
     @InjectMocks
     private CashService cashService;
+
+    @BeforeEach
+    void setUpMeterRegistry() {
+        lenient().when(meterRegistry.counter(anyString(), anyString(), anyString())).thenReturn(counter);
+    }
 
     @Test
     void shouldDepositMoney() {
@@ -82,6 +97,8 @@ class CashServiceTest {
         assertThrows(RemoteException.class,
                 () -> cashService.withdraw("user", operationDto));
 
+        verify(meterRegistry).counter("bank_withdraw_failed_total", "login", "user");
+        verify(counter).increment();
         verify(notificationProducer, never()).send(anyString(), anyString(), any());
     }
 }

@@ -37,7 +37,9 @@ public class KafkaConsumerConfig {
 
         JsonDeserializer<NotificationRequestDto> jsonDeserializer =
                 new JsonDeserializer<>(NotificationRequestDto.class, false);
-        jsonDeserializer.addTrustedPackages("*");
+        jsonDeserializer.addTrustedPackages(
+                "ru.practicum.notifications.dto",
+                "ru.practicum.notifications.model");
 
         return new DefaultKafkaConsumerFactory<>(
                 props,

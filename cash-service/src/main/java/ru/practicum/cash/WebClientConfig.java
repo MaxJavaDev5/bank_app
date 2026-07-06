@@ -25,16 +25,17 @@ public class WebClientConfig {
     private Duration accountsServiceTimeout;
 
     @Bean
-    public WebClient accountsWebClient(OAuth2AuthorizedClientManager authorizedClientManager) {
+    public WebClient accountsWebClient(WebClient.Builder webClientBuilder,
+                                       OAuth2AuthorizedClientManager authorizedClientManager) {
         ServletOAuth2AuthorizedClientExchangeFilterFunction oauth2 =
                 new ServletOAuth2AuthorizedClientExchangeFilterFunction(authorizedClientManager);
-        oauth2.setDefaultClientRegistrationId("cash-client");
+        oauth2.setDefaultClientRegistrationId("cashclient");
 
         HttpClient httpClient = HttpClient.create()
                 .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, (int) accountsServiceConnectTimeout.toMillis())
                 .responseTimeout(accountsServiceTimeout);
 
-        return WebClient.builder()
+        return webClientBuilder
                 .clientConnector(new ReactorClientHttpConnector(httpClient))
                 .baseUrl(accountsServiceUrl)
                 .apply(oauth2.oauth2Configuration())

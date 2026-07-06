@@ -1,5 +1,8 @@
 package ru.practicum.transfer;
 
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -18,6 +21,7 @@ import java.math.BigDecimal;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.lenient;
 
 @ExtendWith(MockitoExtension.class)
 class TransferServiceTest {
@@ -28,8 +32,20 @@ class TransferServiceTest {
     @Mock
     private NotificationProducer notificationProducer;
 
+    @Mock
+    private MeterRegistry meterRegistry;
+
+    @Mock
+    private Counter counter;
+
     @InjectMocks
     private TransferService transferService;
+
+    @BeforeEach
+    void setUpMeterRegistry() {
+        lenient().when(meterRegistry.counter(
+                anyString(), anyString(), anyString(), anyString(), anyString())).thenReturn(counter);
+    }
 
     @Test
     void shouldTransferMoneyBetweenAccounts() {
@@ -56,6 +72,9 @@ class TransferServiceTest {
                 .send(eq("user"), anyString(), eq(NotificationType.TRANSFER_OUT));
         verify(notificationProducer, times(1))
                 .send(eq("user2"), anyString(), eq(NotificationType.TRANSFER_IN));
+        verify(meterRegistry).counter("bank_transfer_total",
+                "from_login", "user", "to_login", "user2");
+        verify(counter).increment();
     }
 
     @Test
@@ -69,6 +88,8 @@ class TransferServiceTest {
 
         verifyNoInteractions(accountsClient);
         verifyNoInteractions(notificationProducer);
+        verify(meterRegistry, never()).counter(anyString(), any(), any(), any(), any());
+        verify(counter, never()).increment();
     }
 
     @Test
@@ -83,6 +104,9 @@ class TransferServiceTest {
         assertThrows(RemoteException.class,
                 () -> transferService.transfer("user", transferDto));
 
+        verify(meterRegistry).counter("bank_transfer_failed_total",
+                "from_login", "user", "to_login", "user2");
+        verify(counter).increment();
         verify(accountsClient, times(1)).transfer("user", "user2", new BigDecimal("99999.00"));
         verify(notificationProducer, never()).send(anyString(), anyString(), any());
     }

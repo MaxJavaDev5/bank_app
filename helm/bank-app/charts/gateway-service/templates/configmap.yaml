@@ -9,3 +9,6 @@ data:
   KEYCLOAK_INTERNAL_PORT: {{ .Values.global.keycloak.internalPort | quote }}
   KEYCLOAK_ISSUER_HOST: {{ .Values.global.keycloak.issuerHost | quote }}
   KEYCLOAK_ISSUER_PORT: {{ .Values.global.keycloak.issuerPort | quote }}
+  ZIPKIN_ENDPOINT: "http://zipkin:9411/api/v2/spans"
+  LOGSTASH_HOST: "logstash"
+  LOGSTASH_PORT: "5000"

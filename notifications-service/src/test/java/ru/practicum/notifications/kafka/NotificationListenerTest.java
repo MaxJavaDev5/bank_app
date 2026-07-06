@@ -4,6 +4,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.test.context.EmbeddedKafka;
 import ru.practicum.notifications.dto.NotificationRequestDto;
@@ -18,6 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest
+@Import(KafkaRawMessageTestConfig.class)
 @EmbeddedKafka(partitions = 1, topics = {
         KafkaTopicsConfig.NOTIFICATIONS_TOPIC,
         KafkaTopicsConfig.NOTIFICATIONS_DLT_TOPIC
@@ -26,6 +28,9 @@ class NotificationListenerTest extends KafkaDltTestSupport {
 
     @Autowired
     private KafkaTemplate<String, Object> kafkaTemplate;
+
+    @Autowired
+    private KafkaTemplate<String, String> rawKafkaTemplate;
 
     @Autowired
     private NotificationRepository notificationRepository;
@@ -51,6 +56,29 @@ class NotificationListenerTest extends KafkaDltTestSupport {
 
         Notification saved = notificationRepository.findByEventId(eventId).orElseThrow();
         assertEquals("user", saved.getLogin());
+        assertEquals(Notification.NotificationType.DEPOSIT, saved.getType());
+    }
+
+    @Test
+    void shouldConsumePlainJsonMessage() {
+        String eventId = UUID.randomUUID().toString();
+        String payload = """
+                {
+                  "eventId": "%s",
+                  "login": "user",
+                  "message": "Пополнение plain JSON",
+                  "type": "DEPOSIT"
+                }
+                """.formatted(eventId);
+
+        rawKafkaTemplate.send(KafkaTopicsConfig.NOTIFICATIONS_TOPIC, "user", payload);
+
+        await().atMost(Duration.ofSeconds(15)).untilAsserted(() ->
+                assertTrue(notificationRepository.findByEventId(eventId).isPresent()));
+
+        Notification saved = notificationRepository.findByEventId(eventId).orElseThrow();
+        assertEquals("user", saved.getLogin());
+        assertEquals("Пополнение plain JSON", saved.getMessage());
         assertEquals(Notification.NotificationType.DEPOSIT, saved.getType());
     }
 

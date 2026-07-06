@@ -1,5 +1,6 @@
 package ru.practicum.notifications.kafka;
 
+import io.micrometer.core.instrument.MeterRegistry;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -15,11 +16,18 @@ import ru.practicum.notifications.service.NotificationService;
 public class NotificationListener {
 
     private final NotificationService notificationService;
+    private final MeterRegistry meterRegistry;
 
     @KafkaListener(
             topics = KafkaTopicsConfig.NOTIFICATIONS_TOPIC,
             containerFactory = "kafkaListenerContainerFactory")
     public void onNotification(@Valid @Payload NotificationRequestDto request) {
-        notificationService.createNotification(request);
+        try {
+            notificationService.createNotification(request);
+        } catch (Exception ex) {
+            meterRegistry.counter("bank_notification_failed_total",
+                    "login", request.getLogin()).increment();
+            throw ex;
+        }
     }
 }

@@ -46,3 +46,33 @@ gateway-service:
     type: NodePort
     port: 8080
     nodePort: 30080
+
+zipkin:
+  enabled: true
+  service:
+    type: NodePort
+    port: 9411
+    nodePort: 30411
+
+prometheus:
+  enabled: true
+  service:
+    type: NodePort
+    port: 9090
+    nodePort: 30090
+
+grafana:
+  enabled: true
+  service:
+    type: NodePort
+    port: 3000
+    nodePort: 30300
+
+elk:
+  enabled: true
+  logstash:
+    service:
+      nodePort: 30500
+  kibana:
+    service:
+      nodePort: 30561

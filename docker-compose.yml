@@ -142,8 +142,6 @@ services:
     depends_on:
       accounts-service:
         condition: service_started
-      notifications-service:
-        condition: service_started
       kafka:
         condition: service_healthy
   transfer-service:
@@ -160,8 +158,6 @@ services:
     depends_on:
       accounts-service:
         condition: service_started
-      notifications-service:
-        condition: service_started
       kafka:
         condition: service_healthy
   front-app:
@@ -177,6 +173,9 @@ services:
       # полный стек в compose: GATEWAY_URL=http://gateway-service:8080
       # гибридный режим (сервисы в K8s): GATEWAY_URL=http://host.docker.internal:30080
       GATEWAY_URL: ${GATEWAY_URL:-http://gateway-service:8080}
+      ZIPKIN_ENDPOINT: http://host.docker.internal:30411/api/v2/spans
+      LOGSTASH_HOST: host.docker.internal
+      LOGSTASH_PORT: "30500"
     networks:
       - bank-network
     depends_on:

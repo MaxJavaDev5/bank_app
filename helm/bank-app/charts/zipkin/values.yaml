@@ -1,0 +1,11 @@
+fullnameOverride: zipkin
+
+image:
+  repository: openzipkin/zipkin-slim
+  tag: "3.5"
+  pullPolicy: IfNotPresent
+
+service:
+  type: NodePort
+  port: 9411
+  nodePort: 30411
